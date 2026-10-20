@@ -1,0 +1,26 @@
+ESP MIDI Bridge — Windows x64 VST3
+
+DAWを閉じてからインストールしてください。
+
+・VST3を標準フォルダーへインストールします。
+・すでに同じプラグインがある場合は上書き更新します。
+・必要な場合のみ、同梱のMicrosoft Visual C++ x64ランタイムを導入します。
+・完了後はDAWのプラグイン一覧を再スキャンしてください。
+・アンインストールはWindowsの「インストールされているアプリ」から行えます。
+・ESP String Lab、他のプラグイン、DAWプロジェクトは変更しません。
+
+Close your DAW before installing. This installs the VST3 into its standard
+folder and replaces an existing ESP MIDI Bridge installation. The bundled
+Microsoft Visual C++ x64 runtime is installed only if required. Rescan plugins
+after setup. Uninstall through Windows Settings > Installed apps.
+
+This package contains the VST3 and connection documentation. It does not include
+the standalone application, other instruments, or a virtual MIDI driver.
+
+v0.2: DAWの録音連動、またはREC MIDIでMIDIテイクも保存できます。
+音声はDAW側で録音してください。詳細はインストール後の接続ガイドへ。
+
+Copyright (c) 2026 DTMgengen. Licensed under GNU AGPL version 3.
+Licence and corresponding source:
+https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.2.0
+See SOURCE.md and LICENSE installed with this program.

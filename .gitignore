@@ -1,0 +1,15 @@
+/build*/
+/local/
+/dist/
+/.vs/
+*.user
+*.suo
+*.log
+*.wav
+*.mid
+*.png
+*.vst3
+*.exe
+*.dll
+.env*
+!.env.example

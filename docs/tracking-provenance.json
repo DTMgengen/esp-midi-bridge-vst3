@@ -1,0 +1,13 @@
+{
+  "origin": "ESP String Lab tracking engine by DTMgengen (extracted source included here)",
+  "commit": "65da4d9",
+  "version": "0.5.0",
+  "extraction": "Dsp.h before struct Route; Dsp.cpp before Envelope::tick, remove blep/oscillator. StrictPitch files verbatim. No tracker arithmetic or thresholds changed.",
+  "extracted_sha256": {
+    "Source/Dsp.h": "44a44f9f39327672d56446f089fe240a2d94cd0200e0cb67e91471b3483bf8ce",
+    "Source/Dsp.cpp": "b7bdb3ff1577afc2c98afb8d02cc0ac12d089fcd663d19d72fe085e33ccc012f",
+    "Source/StrictPitch.h": "3728e5c29cb8faf573e53382b545473ed36fb12495e24898e9efc655d86abcea",
+    "Source/StrictPitch.cpp": "ad745812e3cde4be3ec2b6eaa180eb85ddff6c63ab57129b92100b0c7315276c"
+  },
+  "hash_format": "UTF-8 source content with LF newlines, independent of Git checkout line endings"
+}
