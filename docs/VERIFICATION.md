@@ -11,7 +11,11 @@
 - The editor snapshot is visually inspected. The recording controls fit alongside all existing controls.
 - pluginval 1.0.4 **level 5 SUCCESS**, seed 42, GUI tests enabled.
 
-The recording feature still needs a **real guitar / live FL Studio** audition, including loopback/controller routing, simultaneous audio recording and imported bend playback. A virtual driver is not included. Cubase, Studio One, physical/virtual MIDI loopback and macOS/Logic are not claimed as tested. macOS AU/VST3/Standalone targets have not been built on a Mac.
+**Live FL Studio verification (2026-10-21):** Windows x64, FL Studio 2026 v26.1.7 build 5654, released Bridge v0.2.0, loopMIDI 1.0.16.27, MONO LOOSE, real guitar input. Device MIDI sent through a dedicated loopback port enabled as a generic controller input in FL. The user confirmed Nexus sounded; after stopping FL recording, Nexus Piano roll visibly contained notes and velocity values, and the Playlist contained the simultaneously recorded dry guitar audio clip. The local FL project was saved. No plugin/DSP/installer change was needed.
+
+In this live FL configuration, **Follow DAW record did not automatically start Bridge's separate MIDI-file capture**. Use manual REC MIDI / STOP MIDI when also saving a `.mid` backup. This does not prevent FL's own Piano roll recording through the virtual input.
+
+Recorded/imported 14bit bend playback, POLY recording through FL, physical MIDI loopback, Cubase, Studio One and macOS/Logic remain unverified. A virtual driver is not bundled. macOS AU/VST3/Standalone targets have not been built on a Mac.
 
 The existing pitch engine is unchanged. LOOSE intentionally retains its original character; STRICT and experimental POLY are not guaranteed error-free for arbitrary real audio. Song-position loop jumps are captured as a continuous elapsed-performance take. The event limit stops capture safely; live MIDI is unaffected.
 

@@ -9,7 +9,7 @@
 - ホストへのMIDI出力と、任意のMIDIデバイスへの直接出力。通常は **Host MIDI** を使用。直接出力は仮想MIDIポート経由の接続にも使用できます。
 - Note Off、モード／品質／チャンネル変更、バイパス、PANICを処理。PANIC後はギターがゲート以下になるまでミュート。
 - Dry guitar monitorは初期OFF。新しいシンセ音は生成しません。
-- **MIDIテイク録音（v0.2）**：DAWの録音開始・停止に追従して、出力したノート・ベロシティ・ベンドを標準MIDIファイルへ自動保存。REC MIDIでの手動録音にも対応します。
+- **MIDIテイク録音（v0.2）**：出力したノート・ベロシティ・ベンドを標準MIDIファイルへ保存。REC MIDIで手動録音でき、録音状態を通知するDAWでは開始・停止にも追従します。FL Studioでのファイル保存には手動録音を使ってください。
 
 Windows x64 **VST3＋Standalone**。macOS向けにはVST3／AU／Standaloneのビルド設定を用意していますが、Macビルド／Logicでの検証は未実施です。[検証範囲](docs/VERIFICATION.md)と[DAW別の接続手順](docs/DAW_SETUP.ja.md)を参照してください。
 
@@ -17,16 +17,29 @@ Windows x64 **VST3＋Standalone**。macOS向けにはVST3／AU／Standaloneの�
 
 ## MIDIと音声を録音する
 
+**FL StudioのPiano rollへ直接録音する場合は、Device MIDIと仮想MIDI入力を使います。** WindowsのFL Studio 2026で、実ギター → Bridge → loopMIDI → Nexusの発音、Piano rollのノート／ベロシティ、同時のギター音声録音を確認済みです。
+
+1. [loopMIDI（開発元）](https://www.tobias-erichsen.de/software/loopmidi.html)を別途起動し、専用ポート（例：**ESP Bridge Record**）を作る。
+2. Bridgeを **Device MIDI** にし、出力先にそのポートを選ぶ。FLのMIDI settingsでは同名の **InputをEnable**、Controller typeを **(generic controller)** にする。
+3. Channel Rackで録音先音源を選び、空のPatternを用意。FLのRecordボタン右クリックで **Notes** をONにし、Record＋Playで録音する。
+4. 音声も残すなら対象Mixerトラックのディスク録音と **Audio** を有効化。ギター入力トラックを録れば生ギター、音源出力トラックを録れば音源の音声が残る。
+
+loopMIDIは録音中も起動しておきます。FL側の同じポートへの出力／MIDI THRUは設定せず、以前のHost MIDI接続との二重発音を避けてください。**FLのMIDI Outプラグインは不要です。** [詳しい接続・録音手順とベンドの制約](docs/MIDI_RECORDING.ja.md)。
+
+## MIDIファイルも残す
+
 1. **Follow DAW recordをON**にして、DAW側で音源の音声を録音します。Bridgeがホストの録音状態を受信するとMIDIテイクも開始します。
 2. DAWの録音を止めると、`ミュージック/ESP MIDI Bridge/MIDI Takes/` へ `.mid` を自動保存します。**MIDI Takes**ボタンでフォルダーを開けます。
 3. 保存した `.mid` をFL StudioのPiano roll等へ読み込んで編集します。**Save MIDI...**で最後のテイクを別名保存できます。
-4. DAWから録音状態が来ない場合、またはStandaloneでは、**REC MIDI → 演奏 → STOP MIDI**を使います。
+4. DAWから録音状態が来ない場合、またはStandaloneでは、**REC MIDI → 演奏 → STOP MIDI**を使います。今回のFL Studio 26.1.7での試奏では自動開始しなかったため、FLで`.mid`も残す場合はこの手動操作を使ってください。
 
 これはDAW内のPatternへ直接ノートを挿入する機能ではありません。**Piano rollへリアルタイム録音する場合**は、BridgeのDevice MIDI → 仮想MIDIループバック → FLの有効なMIDI入力へ接続し、FLのNotes録音を使います。音声はDAWで別に録音します。[具体的な設定とベンドの制約](docs/MIDI_RECORDING.ja.md)。
 
 ノート・ベロシティ・14bitベンド・ベンド範囲・テンポ・拍子を保存します。録音中の解析アルゴリズム／ホストへのMIDI出力は同じです。単一の連続テイクとして記録し、DAWのループごとには分割しません。上限262,144イベントで安全停止・保存します（自動で無制限に継続しません）。保存失敗時はテイクを保持してSave MIDIで回復できます。次の録音で前のメモリ上のテイクを置き換えますが、自動保存済みファイルは残ります。
 
-## FL Studioで最初に試す
+## FL Studioで演奏する：Host MIDI接続
+
+以下は音源を鳴らすためのホスト内接続です。Piano rollへのリアルタイム録音は上記のDevice MIDI接続を使います。
 
 1. Plugin Managerで **ESP MIDI Bridge** を再スキャンし、ギターを入力するMixerのエフェクトスロットへ挿入。
 2. Bridge画面の **MIDI DESTINATION = Host MIDI**。Wrapperの歯車→Settings→MIDI **Output port = 20**。
@@ -76,4 +89,4 @@ Copyright (c) 2026 DTMgengen. **AGPL-3.0-only**。自由に閲覧・ビルド・
 
 対応するソースは[各リリース](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases)の同じバージョンのタグ／Source ZIPと、同梱のJUCE依存ソースアーカイブから取得できます。[ソースの構成と再ビルド](docs/SOURCE.md)。
 
-English: Audio-input-to-MIDI controller, with MONO LOOSE/STRICT, experimental six-note POLY, MIDI note/velocity/pitch-bend output and automatic/manual Standard MIDI File capture. No synthesizer is included. Download the Windows x64 VST3 installer from Releases. Match MIDI ports and pitch-bend ranges with your instrument. For direct FL Studio Piano roll recording use an OS MIDI loopback input; alternatively import the automatically saved `.mid` take. macOS targets are provided as unverified source configurations. Licensed under AGPLv3.
+English: Audio-input-to-MIDI controller, with MONO LOOSE/STRICT, experimental six-note POLY, MIDI note/velocity/pitch-bend output and automatic/manual Standard MIDI File capture. No synthesizer is included. Download the Windows x64 VST3 installer from Releases. Match MIDI ports and pitch-bend ranges with your instrument. Direct FL Studio 26.1.7 Piano roll note/velocity recording was verified with a real guitar, Device MIDI, loopMIDI and Nexus, alongside dry guitar audio recording. Keep loopMIDI running. Use manual REC MIDI / STOP MIDI for a separate `.mid` backup in FL; automatic capture did not start in this live test. Recorded bend playback and macOS/other DAWs remain unverified. Licensed under AGPLv3.

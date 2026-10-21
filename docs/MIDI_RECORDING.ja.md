@@ -1,5 +1,7 @@
 # MIDI演奏と音声の録音
 
+**FL StudioのPiano rollへノートを直接残す場合は、下の「リアルタイム録音する」を使ってください。** Bridge内のMIDIファイル保存は、Piano rollへの直接録音とは別の機能です。
+
 ## まずMIDIファイルを残す
 
 v0.2.0では、音源へのMIDI出力と並行して、同じノート・ベロシティ・ピッチベンドをBridge内部で記録できます。音声はこれまでどおりDAW側で録音します。
@@ -13,6 +15,8 @@ v0.2.0では、音源へのMIDI出力と並行して、同じノート・ベロ�
 
 録音状態を通知しないホストでは **REC MIDI** を押してからDAWで録音、演奏後 **STOP MIDI**。BridgeとDAWの開始位置は手動で合わせます。Standaloneでも手動録音を使えます。
 
+**FL Studio 26.1.7での実ギター試奏では、Follow DAW recordによるファイル録音は自動開始しませんでした。** FLで`.mid`も残す場合はREC MIDI／STOP MIDIを操作し、Recording／Saved表示を確認してください。下記のPiano roll録音はこの自動開始に依存しません。
+
 **Save MIDI...** は最後のテイクのコピー保存。録音中は使えません。自動保存に失敗してもテイクをメモリに保持します。書けるフォルダーへSave MIDIで保存してください。失敗を解消するまで次のテイクを上書き開始しません。
 
 ファイルには960 PPQN、ノート、強弱、14bitピッチベンド、RPNベンド範囲、テンポと拍子を保存。ホストがテンポを通知しなければ120 BPM・4/4を使用します。曲内の絶対位置は埋め込まず、録音開始を0とした連続テイクです。ループ／パンチ録音の自動レーン分割、オフライン書き出し時の自動MIDI録音はありません。停止時には保持中のノートを閉じます。
@@ -23,18 +27,20 @@ v0.2.0では、音源へのMIDI出力と並行して、同じノート・ベロ�
 
 WrapperのOutput/Input portを合わせるHost MIDI接続では、音源が鳴っても、FLの入力録音に同じイベントが届くとは限りません。Piano rollへ直接録音するときは、MIDIキーボードと同じ入口へ戻す接続を使います。
 
-1. Windowsで[loopMIDI（開発元）](https://www.tobias-erichsen.de/software/loopmidi.html)等の仮想MIDIループバックを別途用意。専用ポート（例：ESP Bridge Record）を1つ作り、起動しておく。Bridgeのインストーラーにはドライバーを含みません。
+1. Windowsで[loopMIDI（開発元）](https://www.tobias-erichsen.de/software/loopmidi.html)等の仮想MIDIループバックを別途用意。専用ポート（例：ESP Bridge Record）を1つ作り、録音中も起動しておく。設定画面を閉じてもトレイで動作しますが、アプリを終了するとポートも消えます。Bridgeのインストーラーにはドライバーを含みません。
 2. FLの **Options → MIDI settings → Input** でそのポートを選び、EnableをON、Controller typeをGeneric controllerにする。通常のノート録音だけならFL側InputのPort番号は不要です。Bridgeの出力デバイス名と同じループバックの入力を選びます。
 3. Bridgeの **MIDI DESTINATION = Device MIDI**。Refreshし、作成したポートを選ぶ。**Device connected** を確認。
 4. Channel Rackで録音先音源を選び、Piano rollを空にしたPatternを用意。複数コントローラーがある場合は、対象音源の **Receive notes from** でこの入力を割り当てる。
-5. FLのRecordボタンを右クリックし **Notes** を有効化、録音開始してギターを弾く。停止後、PatternのPiano rollにノートがあることを確認。
-6. 同時に音声も残すなら、FL側で音源が鳴るMixerトラックのディスク録音等を設定し、RecordのAudioも有効化する。Dry monitorは生ギターを通す設定で、音源の音声録音先ではありません。
+5. FLのRecordボタンを右クリックし **Notes** を有効化。RecordをONにしてPlay、ギターを弾く。Songモードでは停止後にPatternがPlaylistへ配置され、録音先音源のPiano rollにノートが残る。ノートが見えない場合はPiano rollのズーム／スクロール位置も確認する。
+6. 同時に音声も残すなら、FL側で対象Mixerトラックのディスク録音等を設定し、RecordのAudioも有効化する。ギター入力トラックを録音すれば生ギター、音源出力トラックを録音すれば音源の音声が残る。Dry monitorは生ギターを通す設定で、音源の音声録音先ではありません。
 
 同じ音源へHost MIDIとループバックの両方を接続すると二重発音します。Device MIDI経路を選び、以前のHostポート接続を外してください。ループバックへFL側から再送信するMIDI THRU構成は作らないでください。
 
 **ベンドの注意：** FLのNotes録音と、外部MIDIピッチベンドの記録／再生の扱いは同じではありません。全14bitベンドと範囲を確実に残すにはBridgeのMIDIテイクも同時に保存してください。MIDIファイルを読み込むDAW／音源でもベンド範囲を一致させ、FLで読み込んだベンドの再生は実環境で確認してください。ベンドを不要とする半音単位の編集にはBridgeのMONO pitch bendをOFFにできます。ベンド対応を未検証のまま「Piano rollへ完全再現」とはしていません。
 
-根拠：[FL MIDI録音の公式手順](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/recording_scores.htm)、[Channel Rackの入力割当](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/channelrack.htm)、[MIDI設定](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/envsettings_midi.htm)。このプラグインと実際のFLでの同時録音・ループバック試奏は別途確認が必要です。
+根拠：[FL MIDI録音の公式手順](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/recording_scores.htm)、[Channel Rackの入力割当](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/channelrack.htm)、[MIDI設定](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/envsettings_midi.htm)。
+
+**実機確認（2026-10-21）：** Windows x64、FL Studio 2026 v26.1.7 build 5654、Bridge v0.2.0、loopMIDI 1.0.16.27。実ギターをMONO LOOSEで入力し、Device MIDI → 専用ループバック入力 → 選択中のNexusを演奏。ユーザーの発音確認に加え、停止後のNexus Piano rollでノートとベロシティ、Playlistで同時録音した生ギターのオーディオクリップを確認しました。プラグインの変更・再インストールは不要でした。14bitベンドの記録／再生、POLYでの同時録音、他DAWはこの試奏の検証範囲に含みません。
 
 ## 他のDAW
 

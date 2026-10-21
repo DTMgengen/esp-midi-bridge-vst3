@@ -4,6 +4,8 @@
 
 ## FL Studio / Windows VST3
 
+**Piano rollへ直接録音したい場合：** [Device MIDI → loopMIDI → FLのMIDI入力による手順](MIDI_RECORDING.ja.md#fl-studioのpiano-rollへリアルタイム録音する)を使ってください。実ギターでNexusの発音、ノート／ベロシティ録音と生ギター音声の同時録音を確認済みです。以下のHost MIDI手順は音源を演奏するための接続です。
+
 1. オーディオインターフェースのギター入力をMixerの入力に設定。BridgeをそのMixerへ挿入。BridgeのAUDIO INPUTをLeft／Rightなど実際の入力に合わせる。
 2. **MIDI DESTINATION = Host MIDI**。BridgeのWrapper SettingsのMIDI **Output port**を、例えば **20** にする。
 3. Channel Rackへ目的のVSTiを挿入。受信側Wrapper SettingsのMIDI **Input port**も **20** にする。受信チャンネルを1（またはAll）、BridgeのMIDI CHANNELを1にする。
