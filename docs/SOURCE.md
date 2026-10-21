@@ -1,8 +1,8 @@
 # Corresponding source and build inputs
 
-ESP MIDI Bridge v0.2.0 is released under AGPL-3.0-only. Copyright (c) 2026 DTMgengen.
+ESP MIDI Bridge v0.3.0 is released under AGPL-3.0-only. Copyright (c) 2026 DTMgengen.
 
-- Project source, tests, installation/build scripts and notices: [v0.2.0 tag](https://github.com/DTMgengen/esp-midi-bridge-vst3/tree/v0.2.0) or the Source ZIP on the [same release as the installer](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.2.0).
+- Project source, tests, installation/build scripts and notices: [v0.3.0 tag](https://github.com/DTMgengen/esp-midi-bridge-vst3/tree/v0.3.0) or the Source ZIP on the [same release as the installer](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0).
 - JUCE 8.0.12: exact commit `29396c22c93392d6738e021b83196283d6e4d850`. The release provides an unmodified dependency source archive, including its bundled VST3 SDK and third-party code. Also available from [upstream](https://github.com/juce-framework/JUCE/tree/29396c22c93392d6738e021b83196283d6e4d850). CMake fetches this exact commit when ESP_JUCE_SOURCE is unset.
 - LICENSE contains the full AGPLv3 terms. See THIRD_PARTY_NOTICES.md and licenses/ for dependency notices. JUCE's AGPLv3 licensing option is used for these builds.
 - Build tools: CMake 3.22+, Python 3 (provenance test), MSVC 2019 C++ x64 Build Tools and Windows SDK. Run `scripts/build.ps1`, or configure CMake with `-DESP_JUCE_SOURCE=C:/Sources/JUCE` pointing to the unpacked dependency. Run CTest in Release configuration. README includes the commands.

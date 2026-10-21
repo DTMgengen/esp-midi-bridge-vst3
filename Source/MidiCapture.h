@@ -17,7 +17,13 @@ public:
     void requestStart() noexcept {startRequested=true;}
     void requestStop() noexcept {stopRequested=true;}
     bool saveCopy(const juce::File& destination); // Non-audio threads only.
+    // Recording-only export. Never changes live MIDI or the original take.
+    bool saveCleanCopy(const juce::File& destination);
+    void setCleanupEnabled(bool enabled) noexcept {cleanupRequested=enabled;}
+    int removedNotes() const noexcept {return cleanedNoteCount.load();}
     juce::File lastFile() const;
+    juce::File lastCleanFile() const;
+    bool cleanupFailed() const noexcept {return cleanSaveFailed.load();}
     const juce::File& folder() const {return takesFolder;}
     int state() const noexcept {return currentState.load();}
     bool isRecording() const noexcept {return state()==Recording;}
@@ -32,7 +38,9 @@ private:
     void append(double beat,int kind,uint8_t a,uint8_t b,uint8_t c);
     void appendRange(int channel,int range,double beat);
     void closeNotes(double beat);
-    bool write(const juce::File&);
+    bool write(const juce::File&,bool clean=false);
+    bool render(const juce::File&,bool clean);
+    void saveAutomatic();
     void run() override;
     juce::File takesFolder;
     std::unique_ptr<Event[]> events;
@@ -42,11 +50,14 @@ private:
     int currentChannel=0;
     double previousBpm=120;
     bool wasHostRecording=false,previousFollow=false,autoTake=false,pendingStart=false;
+    bool takeCleanup=false;
     std::array<std::array<uint8_t,128>,16> liveHeld{},takeHeld{};
     std::array<int,16> liveWheel{},ranges{};
     std::atomic<int> currentState{Empty},displayedCount{0};
+    std::atomic<int> cleanedNoteCount{0};
     std::atomic<double> displayedSeconds{0};
     std::atomic<bool> startRequested{false},stopRequested{false},needsSave{false},saveFailed{false};
+    std::atomic<bool> cleanupRequested{false},cleanSaveFailed{false},cleanAvailable{false};
     juce::CriticalSection fileLock;
-    juce::File savedFile;
+    juce::File savedFile,cleanFile;
 };

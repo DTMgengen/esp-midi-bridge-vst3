@@ -76,6 +76,44 @@ int main() {
             const auto beforeOffline=capture.lastFile();capture.requestStart();capture.beginBlock(4800,48000,120,4,4,true,true,1,2,false);capture.endBlock();
             require(!capture.isRecording()&&capture.lastFile()==beforeOffline,"Offline render started a MIDI recording");
         }
+        {
+            // Cleanup exports a separate file after capture. Both sides of a
+            // rejected pair disappear; all other messages retain exact ticks.
+            MidiCapture c(root.getChildFile("cleanup"));c.setCleanupEnabled(true);c.requestStart();
+            c.beginBlock(12000,48000,120,4,4,false,false,1,2);
+            for(const esp::MidiEvent e:std::initializer_list<esp::MidiEvent>{
+                {0,{0x90,60,100}},{4800,{0x80,60,0}},
+                {4848,{0x90,91,30}},{5000,{0xe0,0,80}},{5136,{0x80,91,0}},
+                {5280,{0x90,62,90}},{10080,{0x80,62,0}},
+                {10128,{0x90,95,100}},{10512,{0x80,95,0}},{10560,{0x90,64,95}}}) c.add(e);
+            c.endBlock();c.beginBlock(12000,48000,60,3,4,false,false,1,2);
+            c.add({3360,{0x80,64,0}});c.add({3408,{0x90,96,25}});c.add({3696,{0x80,96,0}});
+            c.add({3840,{0x90,65,100}});c.add({8640,{0x80,65,0}});
+            c.endBlock();c.finish();waitSaved(c);
+            const auto raw=c.lastFile(),clean=root.getChildFile("cleaned.mid");
+            require(c.lastCleanFile().existsAsFile()&&inspect(c.lastCleanFile()).ons==5&&c.removedNotes()==2,"Automatic clean copy failed");
+            juce::MemoryBlock before,after;require(raw.loadFileAsData(before),"Cannot read raw take");
+            require(c.saveCleanCopy(clean)&&c.removedNotes()==2,"Clean export failed / tempo conversion incorrect");
+            require(inspect(raw).ons==7&&inspect(clean).ons==5,"Raw/clean note counts incorrect");
+            require(raw.loadFileAsData(after)&&before==after&&c.lastFile()==raw,"Clean export changed raw take");
+            juce::FileInputStream rawStream(raw),cleanStream(clean);juce::MidiFile rawMidi,cleanMidi;
+            require(rawMidi.readFrom(rawStream,false)&&cleanMidi.readFrom(cleanStream,false),"Cannot parse cleanup files");
+            int next=0;
+            for(int i=0;i<rawMidi.getTrack(0)->getNumEvents();++i) {
+                const auto& a=rawMidi.getTrack(0)->getEventPointer(i)->message;
+                if((a.isNoteOn()||a.isNoteOff())&&(a.getNoteNumber()==91||a.getNoteNumber()==96)) continue;
+                require(next<cleanMidi.getTrack(0)->getNumEvents(),"Clean export lost events");
+                const auto& b=cleanMidi.getTrack(0)->getEventPointer(next++)->message;
+                require(a.getTimeStamp()==b.getTimeStamp()&&a.getRawDataSize()==b.getRawDataSize()&&
+                  std::memcmp(a.getRawData(),b.getRawData(),size_t(a.getRawDataSize()))==0,"Retained timing/velocity/bend/tempo changed");
+            }
+            require(next==cleanMidi.getTrack(0)->getNumEvents(),"Clean export added events");
+            require(!c.saveCleanCopy(raw)&&!c.saveCleanCopy(clean),"Cleanup overwrote an existing take");
+            require(!c.failed()&&c.hasTake(),"Cleanup disturbed capture state");
+            c.setCleanupEnabled(false);c.requestStart();
+            c.beginBlock(12000,48000,120,4,4,false,false,1,2);c.add({0,{0x90,72,100}});c.endBlock();c.finish();waitSaved(c,raw);
+            require(c.lastCleanFile()==juce::File{}&&inspect(c.lastFile()).ons==1,"Cleanup OFF reused the previous clean take");
+        }
         // Full real processor: recording in a DAW captures MIDI while the audio
         // monitor and the ordinary host MIDI bus remain active and unchanged.
         for(int mode=0;mode<2;++mode) for(int quality=0;quality<2;++quality) {
@@ -98,9 +136,12 @@ int main() {
             const auto s=inspect(p->capture.lastFile());require(s.ons==ons&&s.offs==ons,"Capture differs from live MIDI note output");
             require(mode==1?s.ons==3:s.bends>20,"Poly notes or mono pitch bends missing from take");
             // Legacy v0.1 state migration preserves the new default explicitly.
-            auto state=p->parameters.copyState();state.removeChild(state.getChildWithProperty("id","recordFollow"),nullptr);
+            auto state=p->parameters.copyState();
+            for(const char* id:{"recordFollow","recordClean","autoLoopMidi"}) state.removeChild(state.getChildWithProperty("id",id),nullptr);
             juce::MemoryBlock legacy;auto xml=state.createXml();juce::AudioProcessor::copyXmlToBinary(*xml,legacy);
-            set(*p,"recordFollow",0);p->setStateInformation(legacy.getData(),int(legacy.getSize()));require(p->value("recordFollow")==1,"Legacy state did not initialise follow-record");
+            set(*p,"recordFollow",0);set(*p,"recordClean",0);set(*p,"autoLoopMidi",0);
+            p->setStateInformation(legacy.getData(),int(legacy.getSize()));
+            require(p->value("recordFollow")==1&&p->value("recordClean")==1&&p->value("autoLoopMidi")==1,"Legacy state did not initialise appended settings");
             p->setPlayHead(nullptr);p->releaseResources();
         }
         {

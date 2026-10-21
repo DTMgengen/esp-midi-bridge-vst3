@@ -1,8 +1,8 @@
-# v0.2.0 verification scope
+# v0.3.0 preview verification scope
 
 2026-10-21. Windows x64, MSVC 2019, JUCE 8.0.12.
 
-- Release build and **8/8 CTest suites pass**, including independent STRICT accuracy, varied-harmonic pitch fidelity, both MONO qualities, POLY, MIDI lifecycle, source provenance, actual VST3 output and MIDI capture.
+- Release build and **10 CTest suites pass**, including independent STRICT accuracy, varied-harmonic pitch fidelity, both MONO qualities, POLY, MIDI lifecycle, source provenance, actual VST3 output and MIDI capture.
 - Synthetic MONO onset cases: worst first MIDI event 28.71 ms LOOSE / 31.85 ms STRICT (three sample rates and three block sizes). Complete POLY chord up to 92.86 ms in these cases. These figures exclude interface, DAW and receiving-instrument delays.
 - Continuous MONO bends: no retrigger in six two-semitone cases, maximum observed pitch error 12.39 cents. POLY has no independent per-string bend/MPE.
 - Capture tests cover auto/manual start and stop; MONO/POLY with both quality settings; unchanged dry audio and ordinary MIDI output; saved note/velocity/bend/range/tempo/signature timing; held notes; zero-tick replacements; offline exclusion; legacy parameter state; save-copy; save-failure recovery; full-capacity closure. MIDI files are parsed without automatic missing-note-off repair.
@@ -21,4 +21,13 @@ The existing pitch engine is unchanged. LOOSE intentionally retains its original
 
 Installer testing uses the same ISS logic with a separate AppId, no elevation and a project-local destination. Production elevation, a genuinely missing runtime/restart and a second clean PC remain unverified. The setup executable is unsigned.
 
-Isolated v0.2.0 install, same-version repair, locked update/uninstall refusal, installed VST3 host MIDI/capture, successful uninstall and registry removal all pass. Module/metadata hashes match the build, licence/source/recording guides are present, and unrelated files/live plugin installations are preserved. The existing compatible Microsoft runtime is skipped.
+Isolated v0.3.0 install, same-version repair, locked update/uninstall refusal, installed VST3 host MIDI/capture, successful uninstall and registry removal all pass. Module/metadata hashes match the build, licence/source/recording guides are present, and unrelated files/live plugin installations are preserved. The existing compatible Microsoft runtime is skipped.
+
+## v0.3 recording cleanup and virtual MIDI support
+
+- Synthetic cleanup tests retain strong very short notes, sustained soft notes and overlapping chords; remove only brief candidates with additional weak/isolated-pitch context; respect channel boundaries and long gaps.
+- Actual MIDI files: automatic original + clean save, cleanup OFF, protected original / existing files, legacy-state defaults, tempo-change duration conversion and balanced note pairs pass. Every retained event matches original ticks/bytes, including velocity, bends, RPN, tempo and signatures. Analysis/writes occur after recording on non-audio threads. Existing live output and dry audio tests still pass.
+- All ten CTest cases passed; the VST3 test was updated to wait for final original/clean filenames rather than an intermediate temporary file, then the affected tests were rerun. Actual VST3 -> Dexed passes LOOSE/STRICT/POLY, including original + clean capture. Final pluginval level 5 (seed 42, GUI enabled) succeeds. The 1000x928 editor snapshot was inspected.
+- Windows loopMIDI: a controlled cold start from the support component verified the installed application's developer signature, launched it with no visible configuration window, and restored the dedicated port. Already-running detection and keeping ports active after closing the configuration were also checked. The plugin reconnects the saved port; no third-party SDK/driver is embedded. Disabled-helper CTest does not launch external apps.
+- FL 26.1.7: replayed a previously recorded real-guitar audio clip through Bridge in MONO LOOSE and captured 51 original notes / 44 clean notes. Seven note pairs were removed; all retained events match the exact original tick positions and bytes. Drag clean MIDI imported the clean file into Nexus's empty Pattern 2 Piano roll. The original Pattern 1 and audio were preserved and the local project saved. This is recorded-guitar replay, not a newly confirmed live-guitar audition or proof that every removed note was unintended.
+- One FL shutdown attempt stalled during plugin teardown. The saved project was backed up and reopened; playback clock/meters worked again and the user confirmed playback/audio. The cause is not isolated. This is a preview, not a claim that this shutdown condition is resolved. Fresh live fast-passage judgement and FL shutdown stability remain follow-up checks.

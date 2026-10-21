@@ -34,10 +34,22 @@ Host MIDI preserves sample offsets. Device output is a live route and sends a co
 
 Host recording transitions or explicit manual requests control takes. Tempo/time-signature changes and sample offsets become a continuous relative beat timeline, exported as a single-track 960 PPQN Standard MIDI File. Start seeds already-held notes and wheels; stop closes remaining notes. Zero-tick seeded replacement pairs are omitted to avoid importer off/on reordering. Range RPNs in files do not change the live-output RPN setting. Non-realtime processing does not start MIDI capture. No DAW pattern insertion API is used.
 
-Only fixed storage/atomics are used by capture in the callback. The worker writes via a temporary file and atomic replacement; Save MIDI copies on the UI thread. Failures leave the take available. The existing tracker algorithms and event routing are unchanged. Recording tests check saved files against live events and unchanged dry audio. Actual VST3 host recording flags and MIDI-file saving are tested through the wrapper as well as the processor.
+Only fixed storage/atomics are used by capture in the callback. The worker writes via a temporary file and atomic replacement; Save original copies on the UI thread. Failures leave the take available. The existing tracker algorithms and event routing are unchanged. Recording tests check saved files against live events and unchanged dry audio. Actual VST3 host recording flags and MIDI-file saving are tested through the wrapper as well as the processor.
 
 ## Identity and platform boundary
 
 Independent bundle `audio.gengen.espmidibridge`, manufacturer `GgAu`, product `EmB1`, VST3 FX/Tools. The original synth's identity is untouched. VST3 declares audio input, dry audio output and a MIDI event output bus. No MIDI input bus is required and incoming MIDI is not forwarded.
 
 macOS CMake includes an AU **audio effect** target, not a Logic MIDI FX component. The proposed Logic connection is AU/standalone→IAC→instrument input. A Windows build cannot establish AU validation, signing/notarisation, macOS driver compatibility or live routing in Logic. Likewise a successful JUCE VST3-host test is distinct from testing each DAW's routing UI.
+
+## Post-recording cleanup (v0.3)
+
+The live dispatcher / Tracker / MIDI engine are unchanged. Capture latches `recordClean` at take start. The writer holds the Saving state across BOTH the original export and optional clean analysis/export, preventing a new take from overwriting the shared event buffer in between. Originals are always saved first. A clean failure keeps the original and permits manual clean-copy recovery. Starting a new take invalidates the previous in-memory clean-drag target.
+
+`RecordCleanup.h` examines paired notes offline in seconds (following tempo changes), with conservative duration, velocity and surrounding-pitch evidence. Only the matching on/off pair is omitted; retained event timestamps/bytes are unchanged. Original and cleaned files remain separate. This does not edit a DAW's existing Piano roll. The editor offers clean/original export and OS file drag/drop.
+
+## Installed loopMIDI startup (Windows)
+
+`LoopMidiSupport` uses its own worker for process discovery, offline Authenticode/developer checks and hidden launch from standard install paths. Device MIDI plus `autoLoopMidi` enables it. A cross-process lock avoids simultaneous launches; retries are bounded/backed off. Closing a plugin does not terminate the shared service. A message-thread timer retries the explicitly selected output when its saved identifier appears. Missing identifiers are never replaced by arbitrary devices. No process/file/device work occurs in the audio callback.
+
+New parameters `recordClean` and `autoLoopMidi` are appended after the prior 16; state schema 3 supplies explicit ON defaults for legacy states. Plugin identity is unchanged. loopMIDI/virtualMIDI SDK code and binaries are not redistributed. macOS uses its existing virtual-port setup; this startup helper is Windows-only.

@@ -1,4 +1,5 @@
 #include "MidiCapture.h"
+#include "RecordCleanup.h"
 
 using namespace juce;
 MidiCapture::MidiCapture(File folder):Thread("ESP MIDI take writer"),takesFolder(std::move(folder)),events(std::make_unique<Event[]>(capacity)) {
@@ -11,10 +12,7 @@ MidiCapture::MidiCapture(File folder):Thread("ESP MIDI take writer"),takesFolder
 MidiCapture::~MidiCapture() {
     finish();signalThreadShouldExit();notify();stopThread(-1);
     // Persist a just-finished take even when the plugin is removed immediately.
-    if(needsSave.load()) {
-        takesFolder.createDirectory();
-        write(takesFolder.getChildFile("ESP-MIDI-Bridge-"+Uuid().toString()+".mid"));
-    }
+    if(needsSave.load()) saveAutomatic();
 }
 void MidiCapture::append(double at,int kind,uint8_t a,uint8_t b,uint8_t c) {
     if(used<capacity) events[used++]={at,{a,b,c},uint8_t(kind)};
@@ -30,6 +28,7 @@ void MidiCapture::start() {
     int expected=old;
     if(!currentState.compare_exchange_strong(expected,Recording)) return;
     used=0;beat=duration=blockBeat=0;takeHeld={};saveFailed=false;
+    takeCleanup=cleanupRequested.load();cleanSaveFailed=false;cleanedNoteCount=0;cleanAvailable=false;
     const int tempo=std::clamp(int(std::lround(60000000/bpm)),1,0xffffff);
     append(0,1,uint8_t(tempo>>16),uint8_t(tempo>>8),uint8_t(tempo));
     append(0,2,uint8_t(numerator),uint8_t(denominator),0);
@@ -116,27 +115,47 @@ void MidiCapture::endBlock() {
     beat+=blockSamples*beatPerSample;duration+=blockSamples/rate;
     displayedCount=used;displayedSeconds=duration;
 }
-bool MidiCapture::write(const File& file) {
+bool MidiCapture::write(const File& file,bool clean) {
     int old=currentState.load();
     if(old!=Ready&&old!=Full) return false;
     if(!currentState.compare_exchange_strong(old,Saving)) return false;
+    const bool ok=render(file,clean);
+    {
+        const ScopedLock lock(fileLock);
+        if(ok) {if(clean) {cleanFile=file;cleanAvailable=true;}else {savedFile=file;needsSave=false;}}
+    }
+    if(clean) cleanSaveFailed=!ok;else saveFailed=!ok;
+    currentState.store(old,std::memory_order_release);return ok;
+}
+bool MidiCapture::render(const File& file,bool clean) {
     bool ok=false;
     {
         // Write SMF directly: avoid copying a very long MidiMessageSequence on
         // stop. All storage/stream work here is on the writer/UI thread.
         std::vector<uint8_t> skip(size_t(used),0);
         std::array<std::array<int,128>,16> starts;for(auto& c:starts) c.fill(-1);
-        for(int i=0;i<used;++i) if(events[i].kind==0) {
+        std::array<std::array<double,128>,16> startSeconds{};
+        std::vector<esp::RecordedNote> notes;
+        double seconds=0,previousBeat=0,secondsPerBeat=.5;
+        for(int i=0;i<used;++i) {
             const auto& e=events[i];const int c=e.bytes[0]&15,type=e.bytes[0]&0xf0,n=e.bytes[1],v=e.bytes[2];
-            if(type==0x90&&v) starts[c][n]=i;
+            seconds+=(e.beat-previousBeat)*secondsPerBeat;previousBeat=e.beat;
+            if(e.kind==1) {secondsPerBeat=((e.bytes[0]<<16)+(e.bytes[1]<<8)+e.bytes[2])/1000000.;continue;}
+            if(e.kind!=0) continue;
+            if(type==0x90&&v) {starts[c][n]=i;startSeconds[c][n]=seconds;}
             else if(type==0x80||(type==0x90&&!v)) {
                 const int on=starts[c][n];
                 // A seeded held note can be replaced at sample zero. Omit its
                 // zero-tick pair so importers that sort offs before ons do not
                 // turn it into a stuck note.
                 if(on>=0&&std::llround(events[on].beat*960)==std::llround(e.beat*960)) skip[size_t(on)]=skip[size_t(i)]=1;
+                if(clean&&on>=0) notes.push_back({startSeconds[c][n],seconds,c,n,events[on].bytes[2],on,i});
                 starts[c][n]=-1;
             } else if(type==0xb0&&(n==120||n==123)) starts[c].fill(-1);
+        }
+        if(clean) {
+            cleanedNoteCount=esp::cleanRecordedNotes(notes);
+            for(const auto& note:notes) if(note.discard) {skip[size_t(note.onEvent)]=1;skip[size_t(note.offEvent)]=1;}
         }
         MemoryOutputStream track;int lastTick=0;
         auto variable=[&](uint32_t value) {
@@ -168,18 +187,34 @@ bool MidiCapture::write(const File& file) {
             stream.reset();if(ok) ok=temporary.overwriteTargetFileWithTemporary();
         }
     }
-    if(ok) {const ScopedLock lock(fileLock);savedFile=file;needsSave=false;}
-    saveFailed=!ok;currentState.store(old,std::memory_order_release);return ok;
+    return ok;
 }
 bool MidiCapture::saveCopy(const File& file) {return write(file);}
+bool MidiCapture::saveCleanCopy(const File& file) {
+    if(file==lastFile()||file.exists()) return false; // Preserve raw / existing takes.
+    return write(file,true);
+}
 File MidiCapture::lastFile() const {const ScopedLock lock(fileLock);return savedFile;}
+File MidiCapture::lastCleanFile() const {const ScopedLock lock(fileLock);return cleanAvailable.load()?cleanFile:File{};}
+void MidiCapture::saveAutomatic() {
+    int old=currentState.load();
+    if((old!=Ready&&old!=Full)||!currentState.compare_exchange_strong(old,Saving)) return;
+    const auto base="ESP-MIDI-Bridge-"+Time::getCurrentTime().formatted("%Y%m%d-%H%M%S")+"-"+Uuid().toString().substring(0,8);
+    const auto raw=takesFolder.getChildFile(base+"-original.mid"),clean=takesFolder.getChildFile(base+"-clean.mid");
+    const bool rawOK=takesFolder.createDirectory().wasOk()&&render(raw,false);
+    const bool cleanOK=rawOK&&takeCleanup&&render(clean,true);
+    if(rawOK) {
+        const ScopedLock lock(fileLock);savedFile=raw;cleanFile=cleanOK?clean:File{};cleanAvailable=cleanOK;needsSave=false;
+    }
+    saveFailed=!rawOK;cleanSaveFailed=rawOK&&takeCleanup&&!cleanOK;
+    // Keep the buffer locked until BOTH files finish, so the next take cannot
+    // overwrite it between writing the original and analysing the clean copy.
+    currentState.store(old,std::memory_order_release);
+}
 void MidiCapture::run() {
     while(!threadShouldExit()) {
         if(needsSave.load()&&hasTake()&&!saveFailed.load()) {
-            if(takesFolder.createDirectory().wasOk()) {
-                const auto name="ESP-MIDI-Bridge-"+Time::getCurrentTime().formatted("%Y%m%d-%H%M%S")+"-"+Uuid().toString().substring(0,8)+".mid";
-                write(takesFolder.getChildFile(name));
-            } else saveFailed=true;
+            saveAutomatic();
         }
         wait(5);
     }

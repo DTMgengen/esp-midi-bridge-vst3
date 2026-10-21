@@ -1,5 +1,6 @@
 ESP MIDI Bridge — Windows x64 VST3
 
+v0.3.0 試用版：FL終了時の停止を一度確認し、原因を切り分け中です。
 DAWを閉じてからインストールしてください。
 
 ・VST3を標準フォルダーへインストールします。
@@ -17,10 +18,12 @@ after setup. Uninstall through Windows Settings > Installed apps.
 This package contains the VST3 and connection documentation. It does not include
 the standalone application, other instruments, or a virtual MIDI driver.
 
-v0.2: DAWの録音連動、またはREC MIDIでMIDIテイクも保存できます。
+v0.3: DAWの録音連動、またはREC MIDIでMIDIテイクも保存できます。
+録音後は元データとクリーン版MIDIを保存できます。演奏用MIDIは変えません。
+Device MIDIではインストール済みloopMIDIの自動起動に対応します。
 音声はDAW側で録音してください。詳細はインストール後の接続ガイドへ。
 
 Copyright (c) 2026 DTMgengen. Licensed under GNU AGPL version 3.
 Licence and corresponding source:
-https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.2.0
+https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0
 See SOURCE.md and LICENSE installed with this program.

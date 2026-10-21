@@ -1,6 +1,8 @@
 # Windowsインストーラー
 
-Releasesから `ESP-MIDI-Bridge-Setup-0.2.0-win-x64.exe` をダウンロードして実行します。日本語／英語のInno Setupウィザードです。Windows 10（1809以降）／11のx64対応環境が対象。管理者権限で全ユーザー向けに導入します。
+v0.3.0は試用版です。FL終了時の停止が一度あり原因を切り分け中です。
+
+Releasesから `ESP-MIDI-Bridge-Setup-0.3.0-win-x64.exe` をダウンロードして実行します。日本語／英語のInno Setupウィザードです。Windows 10（1809以降）／11のx64対応環境が対象。管理者権限で全ユーザー向けに導入します。
 
 - VST3: `C:\Program Files\Common Files\VST3\ESP MIDI Bridge.vst3`
 - 接続ガイド・ライセンス・アンインストーラー: `C:\Program Files\Gengen Audio\ESP MIDI Bridge`

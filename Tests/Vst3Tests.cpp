@@ -74,16 +74,25 @@ int main(int argc,char** argv) {
         head.recording=false;input.clear();bridge->processBlock(input,midi);
         juce::Array<juce::File> files;
         for(int wait=0;wait<1000;++wait) {
-            files=takes.findChildFiles(juce::File::findFiles,false,"*.mid");if(!files.isEmpty()) break;juce::Thread::sleep(5);
+            // TemporaryFile can retain a .mid extension until atomic rename.
+            // Wait for both FINAL names, rather than counting temporary files.
+            files=takes.findChildFiles(juce::File::findFiles,false,"*-original.mid");
+            files.addArray(takes.findChildFiles(juce::File::findFiles,false,"*-clean.mid"));
+            if(files.size()==2) break;juce::Thread::sleep(5);
         }
-        require(files.size()==1,"VST3 host record state did not auto-save a MIDI take");
-        juce::FileInputStream recorded(files[0]);juce::MidiFile take;
+        require(files.size()==2,"VST3 host record state did not save original and clean MIDI takes");
+        bool haveOriginal=false,haveClean=false;
+        for(const auto& file:files) {
+        haveOriginal|=file.getFileName().endsWith("-original.mid");haveClean|=file.getFileName().endsWith("-clean.mid");
+        juce::FileInputStream recorded(file);juce::MidiFile take;
         require(take.readFrom(recorded,false),"VST3 recorded MIDI cannot be parsed");int recordedOns=0,recordedOffs=0,recordedBends=0;
         for(int t=0;t<take.getNumTracks();++t) for(int i=0;i<take.getTrack(t)->getNumEvents();++i) {
             const auto& m=take.getTrack(t)->getEventPointer(i)->message;
             if(m.isNoteOn()) ++recordedOns;else if(m.isNoteOff()) ++recordedOffs;else if(m.isPitchWheel()) ++recordedBends;
         }
         require(recordedOns==ons&&recordedOffs==offs&&recordedBends==bends,"Saved VST3 take differs from live notes/bends");
+        }
+        require(haveOriginal&&haveClean,"VST3 did not retain both take versions");
         bridge->setPlayHead(nullptr);
         bridge->releaseResources();if(target) target->releaseResources();
         std::cout<<"PASS actual VST3 "<<(scenario==0?"MONO LOOSE":scenario==1?"MONO STRICT":"POLY")<<": notes "<<ons<<", offs "<<offs<<", bends "<<bends<<", target "<<(target?target->getName().toStdString():"none")<<", audio energy "<<energy<<'\n';

@@ -7,6 +7,7 @@ body{font-family:system-ui,"Yu Gothic UI",sans-serif;line-height:1.8;background:
 <h1>ESP MIDI Bridge</h1><p class="muted">ギターの音声 → MIDI → お気に入りの音源</p>
 <p>シンセ音源を内蔵しない、音声からMIDIへの変換プラグインです。Windows x64のVST3対応DAWで使用します。</p>
 <div class="card"><strong>インストール後、最初にDAWでプラグインを再スキャンしてください。</strong><br>VST3の場所：<code>C:\Program Files\Common Files\VST3\ESP MIDI Bridge.vst3</code></div>
+<p class="card">v0.3.0は試用版です。FL終了処理が一度停止したため原因を確認中です。通常再生は再起動後に復旧しました。録音後の整理と自動起動の検証範囲はVERIFICATION.mdを参照してください。</p>
 <h2>FL Studioで接続する</h2>
 <ol><li>ギターを入力するMixerのエフェクトスロットに <strong>ESP MIDI Bridge</strong> を挿入します。</li>
 <li>Bridgeの <strong>MIDI DESTINATION</strong> を <strong>Host MIDI</strong> にします。Wrapperの歯車 → Settings → MIDI の <strong>Output port</strong> を、例えば <strong>20</strong> にします。</li>
@@ -19,16 +20,21 @@ body{font-family:system-ui,"Yu Gothic UI",sans-serif;line-height:1.8;background:
 <li><strong>チョーキング：</strong>MONO pitch bendをONにし、Bridgeと受信音源のベンド範囲を合わせます。最初は双方とも <strong>±2半音</strong>。広いベンドは±12／24も選べます。</li>
 <li><strong>ギター音も聴く：</strong>Dry guitar monitorをONにします。初期値はOFFです。</li>
 <li><strong>PANIC：</strong>MIDIノートを止めます。ギターを一度ミュートし、入力がゲート以下になってから再演奏してください。</li></ul>
-<h2>MIDIと音声を録音する（v0.2）</h2>
-<ol><li><strong>Follow DAW record</strong>をONにし、DAWで音源の音声を録音します。Bridgeが録音状態を受信するとMIDIテイクも記録します。</li>
-<li>DAWの録音を止めると、ミュージックフォルダー内の <code>ESP MIDI Bridge/MIDI Takes</code> に <code>.mid</code> を保存します。<strong>MIDI Takes</strong>ボタンで開きます。</li>
-<li>そのファイルをFL StudioのPiano roll等へ読み込みます。ホストが録音状態を通知しない場合は、<strong>REC MIDI → 演奏 → STOP MIDI</strong>を使います。<strong>Save MIDI...</strong>で最後のテイクを別名保存できます。</li></ol>
-<p><strong>Piano rollへ直接リアルタイム録音する場合：</strong>別途<a href="https://www.tobias-erichsen.de/software/loopmidi.html">loopMIDI</a>等で仮想ポートを作成 → Bridgeを<strong>Device MIDI</strong>にしてその出力先を選択 → FLのMIDI settingsのInputで同じポートをEnable → 対象音源を選び、FLのRecordの<strong>Notes</strong>をONにします。Host MIDIで同じ音源へ二重に送らないでください。</p>
-<p>音声はDAW側で別に録音します。全ベンドも残すにはBridgeのMIDIテイクを併用してください。<a href="MIDI_RECORDING.ja.md">録音の詳しい手順と制約</a>。</p>
+<h2>クリーン版MIDIを録音する（v0.3）</h2>
+<ol><li><strong>Auto-save cleaned copy</strong>をONにし、Bridgeの<strong>REC MIDI</strong>を押します。</li>
+<li>DAWでも必要な音声録音を開始して演奏し、Bridgeの<strong>STOP MIDI</strong>で停止します。</li>
+<li>ミュージックフォルダー内の<code>ESP MIDI Bridge/MIDI Takes</code>へ<strong>-original.mid</strong>と<strong>-clean.mid</strong>を保存します。</li>
+<li><strong>Drag clean MIDI</strong>を音源のPiano rollへドラッグして読み込みます。別名保存は<strong>Save cleaned...</strong>／<strong>Save original...</strong>、保存先は<strong>MIDI Takes</strong>から開きます。</li></ol>
+<p>短さ・強弱・前後の音程から疑わしい短いノートを整理します。演奏用MIDIは変えず、元データも残します。短い装飾音が消える可能性もあるので元データと聴き比べてください。FLの既存Piano rollへ直接録音したノートは自動で書き換えません。</p>
+<p>このファイル録音はBridgeに内蔵され、loopMIDIなしでも動作します。FLではREC MIDI／STOP MIDIを使用してください。Follow DAW recordはホストが録音状態を通知する場合だけ動作します。</p>
+<h2>FLへ直接録音する場合・loopMIDIの自動起動</h2>
+<p>別途<a href="https://www.tobias-erichsen.de/software/loopmidi.html">公式loopMIDI</a>を初回インストールして専用ポートを作成します。Bridgeを<strong>Device MIDI</strong>にし、そのポートを選択。FLのMIDI settingsで同じInputをEnableにし、Notes録音を使います。</p>
+<p><strong>Auto-start installed loopMIDI</strong>をONにすると、インストール済みloopMIDIをバックグラウンド起動し、選択済みポートへ再接続します。loopMIDIの設定画面の×で閉じてもポートは動作し続けます。意図して終了する場合はAuto-startをOFFにしてください。ドライバーは同梱しません。</p>
+<p>Host MIDIで同じ音源へ二重に送らないでください。音声はDAW側で録音します。<a href="MIDI_RECORDING.ja.md">録音の詳しい手順と制約</a>。</p>
 <h2>他のDAW・MIDIポート</h2><p>DAWがプラグインのMIDI出力を音源へ接続できる場合は、Host MIDIを使います。直接つなげない構成では、Device MIDIからOS側の仮想MIDIループバックポートへ送り、音源トラックのMIDI入力にそのポートを選ぶ方法があります。仮想MIDIドライバーはこのインストーラーには含まれません。</p>
 <p>詳しい手順：<a href="DAW_SETUP.ja.md">DAW別接続ガイド</a>。Cubase／Studio Oneの実機接続とmacOS／Logic用ビルドは未検証です。このインストーラーはWindows用です。</p>
 <h2>更新・削除</h2><p>更新時もDAWを閉じてからセットアップを実行してください。削除はWindowsの「設定 → アプリ → インストールされているアプリ → ESP MIDI Bridge」から行います。ESP String Labや他の音源、DAWプロジェクトは削除しません。</p>
 <h2>English quick start</h2><p>Rescan plugins, insert ESP MIDI Bridge on your guitar mixer track, and choose Host MIDI. In FL Studio, set the Bridge wrapper MIDI Output port to 20 and your VST instrument wrapper MIDI Input port to 20. Match MIDI channels and pitch-bend ranges (initially ±2 semitones). No MIDI Out plugin is required. MONO offers LOOSE and STRICT; POLY uses the experimental chord detector. Close your DAW before updating or uninstalling.</p>
-<h2>ソースとライセンス</h2><p>Copyright (c) 2026 DTMgengen · GNU AGPL v3。<a href="LICENSE">ライセンス全文</a> / <a href="SOURCE.md">対応ソースと再ビルド方法</a> / <a href="https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.2.0">v0.2.0の公開ソース・JUCE依存ソース</a>。</p>
+<h2>ソースとライセンス</h2><p>Copyright (c) 2026 DTMgengen · GNU AGPL v3。<a href="LICENSE">ライセンス全文</a> / <a href="SOURCE.md">対応ソースと再ビルド方法</a> / <a href="https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0">v0.3.0の公開ソース・JUCE依存ソース</a>。</p>
 <p class="muted">Gengen Audio · <a href="THIRD_PARTY_NOTICES.md">依存ソフトウェアについて</a></p>
 </body></html>

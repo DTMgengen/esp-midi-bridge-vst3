@@ -9,13 +9,28 @@
 - ホストへのMIDI出力と、任意のMIDIデバイスへの直接出力。通常は **Host MIDI** を使用。直接出力は仮想MIDIポート経由の接続にも使用できます。
 - Note Off、モード／品質／チャンネル変更、バイパス、PANICを処理。PANIC後はギターがゲート以下になるまでミュート。
 - Dry guitar monitorは初期OFF。新しいシンセ音は生成しません。
+- **録音後のノート整理（v0.3）**：短さに加えて強弱・前後の音程も使い、疑わしい短いノートを除いたクリーン版MIDIを保存。元のMIDIも残します。演奏用MIDIとピッチ検出は変更しません。
+- **loopMIDIの自動起動（Windows）**：Device MIDIを使う場合、インストール済みの署名付きloopMIDIをバックグラウンド起動し、選択済みポートへ再接続。×で設定画面を閉じてもポートは維持されます。ドライバー／SDKは同梱しません。
 - **MIDIテイク録音（v0.2）**：出力したノート・ベロシティ・ベンドを標準MIDIファイルへ保存。REC MIDIで手動録音でき、録音状態を通知するDAWでは開始・停止にも追従します。FL Studioでのファイル保存には手動録音を使ってください。
 
 Windows x64 **VST3＋Standalone**。macOS向けにはVST3／AU／Standaloneのビルド設定を用意していますが、Macビルド／Logicでの検証は未実施です。[検証範囲](docs/VERIFICATION.md)と[DAW別の接続手順](docs/DAW_SETUP.ja.md)を参照してください。
 
-**[Windowsインストーラーのダウンロード](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/latest)**：`ESP-MIDI-Bridge-Setup-0.2.0-win-x64.exe`。DAWを閉じて実行すると、VST3と接続ガイドを導入します。必要なVC++ x64ランタイムも同梱し、不足時だけ導入します。Windowsの「インストールされているアプリ」から削除できます。インストーラーにStandaloneや仮想MIDIドライバーは含まれません。[作成方法と検証範囲](docs/INSTALLER.ja.md)。セットアップは未署名です。
+**[Windows v0.3.0試用版インストーラー](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0)**：`ESP-MIDI-Bridge-Setup-0.3.0-win-x64.exe`。DAWを閉じて実行すると、VST3と接続ガイドを導入します。必要なVC++ x64ランタイムも同梱し、不足時だけ導入します。Windowsの「インストールされているアプリ」から削除できます。インストーラーにStandaloneや仮想MIDIドライバーは含まれません。[作成方法と検証範囲](docs/INSTALLER.ja.md)。セットアップは未署名です。
+
+v0.3.0は試用版です。録音後の整理・loopMIDI起動は検証済みですが、FLで終了処理が一度停止したため、原因の切り分けを継続します。通常再生は再起動後に復旧し、ユーザーも発音を確認しています。安定版は[Releases/latest](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/latest)から取得できます。
 
 ## MIDIと音声を録音する
+
+**不要ノートを整理した録音には、Bridgeのクリーン版MIDIを使います。**
+
+1. **Auto-save cleaned copy**をONにし、Bridgeの **REC MIDI** を押す。
+2. 必要ならFL側でも録音を開始して演奏。音声はDAW側で録音する。
+3. 演奏後、Bridgeの **STOP MIDI**。MIDI Takesへ `-original.mid` と `-clean.mid` を保存する。
+4. **Drag clean MIDI**をNexus等のPiano rollへドラッグして読み込む。別名保存は **Save cleaned...**、元のデータは **Save original...** または **MIDI Takes**から取得する。
+
+録音の発音・音量・ベンド・応答速度は変わりません。クリーン版でも残すイベントの時刻を動かしません。短いノートを長さだけで一律に消す処理ではありませんが、演奏意図を完全に識別できるわけではありません。元データと比べて短いニュアンスが必要なら元データを使えます。**FLのPiano rollへ直接録音された既存ノートは自動で書き換えません。** [判定内容と制約](docs/MIDI_RECORDING.ja.md)。
+
+## FLのPiano rollへ直接録音する（元データ）
 
 **FL StudioのPiano rollへ直接録音する場合は、Device MIDIと仮想MIDI入力を使います。** WindowsのFL Studio 2026で、実ギター → Bridge → loopMIDI → Nexusの発音、Piano rollのノート／ベロシティ、同時のギター音声録音を確認済みです。
 
@@ -30,12 +45,12 @@ loopMIDIは録音中も起動しておきます。FL側の同じポートへの�
 
 1. **Follow DAW recordをON**にして、DAW側で音源の音声を録音します。Bridgeがホストの録音状態を受信するとMIDIテイクも開始します。
 2. DAWの録音を止めると、`ミュージック/ESP MIDI Bridge/MIDI Takes/` へ `.mid` を自動保存します。**MIDI Takes**ボタンでフォルダーを開けます。
-3. 保存した `.mid` をFL StudioのPiano roll等へ読み込んで編集します。**Save MIDI...**で最後のテイクを別名保存できます。
+3. 保存した `.mid` をFL StudioのPiano roll等へ読み込んで編集します。**Save cleaned...／Save original...**で最後のテイクを別名保存できます。
 4. DAWから録音状態が来ない場合、またはStandaloneでは、**REC MIDI → 演奏 → STOP MIDI**を使います。今回のFL Studio 26.1.7での試奏では自動開始しなかったため、FLで`.mid`も残す場合はこの手動操作を使ってください。
 
 これはDAW内のPatternへ直接ノートを挿入する機能ではありません。**Piano rollへリアルタイム録音する場合**は、BridgeのDevice MIDI → 仮想MIDIループバック → FLの有効なMIDI入力へ接続し、FLのNotes録音を使います。音声はDAWで別に録音します。[具体的な設定とベンドの制約](docs/MIDI_RECORDING.ja.md)。
 
-ノート・ベロシティ・14bitベンド・ベンド範囲・テンポ・拍子を保存します。録音中の解析アルゴリズム／ホストへのMIDI出力は同じです。単一の連続テイクとして記録し、DAWのループごとには分割しません。上限262,144イベントで安全停止・保存します（自動で無制限に継続しません）。保存失敗時はテイクを保持してSave MIDIで回復できます。次の録音で前のメモリ上のテイクを置き換えますが、自動保存済みファイルは残ります。
+ノート・ベロシティ・14bitベンド・ベンド範囲・テンポ・拍子を保存します。録音中の解析アルゴリズム／ホストへのMIDI出力は同じです。単一の連続テイクとして記録し、DAWのループごとには分割しません。上限262,144イベントで安全停止・保存します（自動で無制限に継続しません）。保存失敗時はテイクを保持してSave originalで回復できます。次の録音で前のメモリ上のテイクを置き換えますが、自動保存済みファイルは残ります。
 
 ## FL Studioで演奏する：Host MIDI接続
 
@@ -90,3 +105,5 @@ Copyright (c) 2026 DTMgengen. **AGPL-3.0-only**。自由に閲覧・ビルド・
 対応するソースは[各リリース](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases)の同じバージョンのタグ／Source ZIPと、同梱のJUCE依存ソースアーカイブから取得できます。[ソースの構成と再ビルド](docs/SOURCE.md)。
 
 English: Audio-input-to-MIDI controller, with MONO LOOSE/STRICT, experimental six-note POLY, MIDI note/velocity/pitch-bend output and automatic/manual Standard MIDI File capture. No synthesizer is included. Download the Windows x64 VST3 installer from Releases. Match MIDI ports and pitch-bend ranges with your instrument. Direct FL Studio 26.1.7 Piano roll note/velocity recording was verified with a real guitar, Device MIDI, loopMIDI and Nexus, alongside dry guitar audio recording. Keep loopMIDI running. Use manual REC MIDI / STOP MIDI for a separate `.mid` backup in FL; automatic capture did not start in this live test. Recorded bend playback and macOS/other DAWs remain unverified. Licensed under AGPLv3.
+
+Version 0.3 preview: record with REC MIDI / STOP MIDI, then import the clean copy using Drag clean MIDI. Originals are retained. Live MIDI stays unchanged. Device MIDI can start an already installed, signed loopMIDI in the background. One FL shutdown stall remains under investigation; playback recovered after restarting.

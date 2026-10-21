@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 using namespace juce;
-namespace {constexpr const char* ids[]={"mode","monoQuality","input","gain","threshold","confidence","midiChannel","transpose","bend","bendRange","sendRange","fixedVelocity","release","monitor","route","recordFollow"};}
+namespace {constexpr const char* ids[]={"mode","monoQuality","input","gain","threshold","confidence","midiChannel","transpose","bend","bendRange","sendRange","fixedVelocity","release","monitor","route","recordFollow","recordClean","autoLoopMidi"};}
 AudioProcessorValueTreeState::ParameterLayout ESPMidiBridgeProcessor::layout() {
     AudioProcessorValueTreeState::ParameterLayout p;
     auto choice=[&](const char* id,const char* name,StringArray options,int initial=0) {p.add(std::make_unique<AudioParameterChoice>(ParameterID{id,1},name,options,initial));};
@@ -20,12 +20,15 @@ AudioProcessorValueTreeState::ParameterLayout ESPMidiBridgeProcessor::layout() {
     number("release","Missing-pitch hold",5,150,30,"ms");toggle("monitor","Monitor dry guitar",false);
     choice("route","MIDI destination",{"Host MIDI","Device MIDI","Host + device"});
     toggle("recordFollow","Follow DAW MIDI recording",true);
+    toggle("recordClean","Auto-save cleaned MIDI copy",true);
+    toggle("autoLoopMidi","Auto-start installed loopMIDI",true);
     return p;
 }
 ESPMidiBridgeProcessor::ESPMidiBridgeProcessor(File captureFolder)
  : AudioProcessor(BusesProperties().withInput("Guitar",AudioChannelSet::stereo(),true).withOutput("Dry monitor",AudioChannelSet::stereo(),true)),
    parameters(*this,nullptr,"ESPMidiBridgeState",layout()),capture(std::move(captureFolder)) {
     for(size_t i=0;i<cached.size();++i) cached[i]=parameters.getRawParameterValue(ids[i]);
+    startTimer(1000);
 }
 float ESPMidiBridgeProcessor::value(const char* id) const {
     for(size_t i=0;i<cached.size();++i) if(std::strcmp(id,ids[i])==0) return cached[i]->load();
@@ -82,6 +85,7 @@ void ESPMidiBridgeProcessor::processBlock(AudioBuffer<float>& audio,MidiBuffer& 
     }
     static constexpr int ranges[]={2,12,24};
     const int bendRange=ranges[std::clamp(int(value("bendRange")),0,2)];
+    capture.setCleanupEnabled(value("recordClean")>.5f);
     capture.beginBlock(n,processingRate,bpm,numerator,denominator,recording&&live,value("recordFollow")>.5f,int(value("midiChannel")),bendRange,live);
     if(deferredOffs.count>0) {dispatch(deferredOffs,midi,deferredRoute,live);deferredOffs.clear();}
     const bool stopped=wasPlaying&&!playing;wasPlaying=playing;
@@ -149,14 +153,14 @@ bool ESPMidiBridgeProcessor::selectDevice(const String& id) {
     const bool ok=device.select(id);resetRequested=true;return ok;
 }
 void ESPMidiBridgeProcessor::getStateInformation(MemoryBlock& dest) {
-    auto state=parameters.copyState();state.setProperty("schemaVersion",2,nullptr);state.setProperty("deviceId",device.selected(),nullptr);
+    auto state=parameters.copyState();state.setProperty("schemaVersion",3,nullptr);state.setProperty("deviceId",device.selected(),nullptr);
     auto xml=state.createXml();copyXmlToBinary(*xml,dest);
 }
 void ESPMidiBridgeProcessor::setStateInformation(const void* data,int size) {
     if(auto xml=getXmlFromBinary(data,size)) if(xml->hasTagName(parameters.state.getType())) {
         auto state=ValueTree::fromXml(*xml);
-        if(!state.getChildWithProperty("id","recordFollow").isValid()) {
-            ValueTree child("PARAM");child.setProperty("id","recordFollow",nullptr);child.setProperty("value",1.0f,nullptr);state.appendChild(child,nullptr);
+        for(const char* id:{"recordFollow","recordClean","autoLoopMidi"}) if(!state.getChildWithProperty("id",id).isValid()) {
+            ValueTree child("PARAM");child.setProperty("id",id,nullptr);child.setProperty("value",1.0f,nullptr);state.appendChild(child,nullptr);
         }
         parameters.replaceState(state);resetRequested=true;
         {const ScopedLock lock(pendingLock);pendingDevice=state.getProperty("deviceId").toString();}
@@ -166,6 +170,16 @@ void ESPMidiBridgeProcessor::setStateInformation(const void* data,int size) {
 void ESPMidiBridgeProcessor::handleAsyncUpdate() {
     String id;{const ScopedLock lock(pendingLock);id=pendingDevice;}
     if(id!=device.selected()) selectDevice(id);
+    timerCallback();
+}
+void ESPMidiBridgeProcessor::timerCallback() {
+    const bool useDevice=value("route")>.5f;
+    loopMidi.setEnabled(useDevice&&value("autoLoopMidi")>.5f&&!isNonRealtime());
+    const auto id=device.selected();
+    if(!useDevice||id.isEmpty()) return;
+    const auto available=MidiOutput::getAvailableDevices();
+    const bool present=std::any_of(available.begin(),available.end(),[&](const auto& d){return d.identifier==id;});
+    if(present!=device.isConnected()) selectDevice(id);
 }
 AudioProcessorEditor* ESPMidiBridgeProcessor::createEditor() {return new ESPMidiBridgeEditor(*this);}
 AudioProcessor* JUCE_CALLTYPE createPluginFilter() {return new ESPMidiBridgeProcessor();}
