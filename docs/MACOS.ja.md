@@ -21,7 +21,7 @@ ESP MIDI Bridgeはギター入力をMIDIへ変換します。Macでは **VST3、
    | AU | `AU/ESP MIDI Bridge.component` | `~/Library/Audio/Plug-Ins/Components/` |
    | Standalone | `Standalone/ESP MIDI Bridge.app` | `~/Applications/` など |
 
-4. DAWを起動し、プラグインを再スキャンします。Logic ProではAudio FXの **Audio Units → Gengen Audio → ESP MIDI Bridge** を使います。Standaloneはアプリを直接開きます。
+4. DAWを起動し、プラグインを再スキャンします。Logic ProではAudio FXの **Audio Units → Gengen Audio → ESP MIDI Bridge** を使います。表示されない場合は[AppleのAU再スキャン手順](https://support.apple.com/122179)を参照してください。Standaloneはアプリを直接開きます。
 
 スクリプトはMac上でビルドしたバンドルにローカル用のアドホック署名を付けます。Developer ID署名やAppleの公証は行いません。Mac版インストーラーは同梱していません。[配置先の参考: JUCE公式](https://juce.com/tutorials/tutorial_app_plugin_packaging/)。
 

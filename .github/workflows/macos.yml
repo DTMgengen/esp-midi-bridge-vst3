@@ -35,7 +35,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Build VST3, AU and Standalone
-        id: build
         run: bash scripts/build-macos.sh
       - name: Check bundles and validate Audio Unit
         shell: bash
@@ -49,13 +48,24 @@ jobs:
             lipo "$bundle/Contents/MacOS/$executable" -verify_arch "$ESP_MACOS_ARCHITECTURES"
           done
           /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
-          components="$HOME/Library/Audio/Plug-Ins/Components"
-          mkdir -p "$components"
-          ditto "$au" "$components/ESP MIDI Bridge.component"
-          auval -v aufx EmB1 GgAu | tee "$RUNNER_TEMP/esp-auval.log"
-          grep -F 'AU VALIDATION SUCCEEDED' "$RUNNER_TEMP/esp-auval.log"
+          # This install is only on the disposable GitHub-hosted runner.
+          # Refresh its registrar so auval sees the newly copied component.
+          components=/Library/Audio/Plug-Ins/Components
+          sudo mkdir -p "$components"
+          sudo ditto "$au" "$components/ESP MIDI Bridge.component"
+          sudo killall -TERM AudioComponentRegistrar || true
+          log="$RUNNER_TEMP/esp-auval.log"
+          for attempt in 1 2 3 4; do
+            if auval -v aufx EmB1 GgAu >"$log" 2>&1 && grep -Fq 'AU VALIDATION SUCCEEDED' "$log"; then
+              cat "$log"
+              exit 0
+            fi
+            cat "$log"
+            grep -Fq "didn't find the component" "$log" || exit 1
+            sleep 2
+          done
+          exit 1
       - name: Test pitch, MIDI capture, VST3 and CoreMIDI
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           cmake --build build-macos --config Release
