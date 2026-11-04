@@ -79,6 +79,7 @@ macOS用ソースビルド（XcodeまたはCommand Line Tools、CMake 3.22以上
 
 ```sh
 bash scripts/build-macos.sh
+cmake --build build-macos --config Release --parallel 2 # テストもビルドする場合
 ctest --test-dir build-macos -C Release --output-on-failure
 ```
 

@@ -19,12 +19,15 @@ jobs:
         include:
           - runner: macos-15
             arch: arm64
+            parallel: 3
           - runner: macos-15-intel
             arch: x86_64
+            parallel: 4
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     env:
       CMAKE_GENERATOR: Ninja
+      CMAKE_BUILD_PARALLEL_LEVEL: ${{ matrix.parallel }}
       ESP_MACOS_ARCHITECTURES: ${{ matrix.arch }}
 
     steps:
@@ -34,10 +37,7 @@ jobs:
       - name: Build VST3, AU and Standalone
         id: build
         run: bash scripts/build-macos.sh
-      - name: Test pitch, MIDI capture, VST3 and CoreMIDI
-        run: ctest --test-dir build-macos -C Release --output-on-failure --timeout 480
       - name: Check bundles and validate Audio Unit
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           products=build-macos/ESPMidiBridge_artefacts/Release
@@ -46,7 +46,7 @@ jobs:
           app="$products/Standalone/ESP MIDI Bridge.app"
           for bundle in "$vst" "$au" "$app"; do
             executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$bundle/Contents/Info.plist")
-            lipo -verify_arch "$ESP_MACOS_ARCHITECTURES" "$bundle/Contents/MacOS/$executable"
+            lipo "$bundle/Contents/MacOS/$executable" -verify_arch "$ESP_MACOS_ARCHITECTURES"
           done
           /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
           components="$HOME/Library/Audio/Plug-Ins/Components"
@@ -54,3 +54,9 @@ jobs:
           ditto "$au" "$components/ESP MIDI Bridge.component"
           auval -v aufx EmB1 GgAu | tee "$RUNNER_TEMP/esp-auval.log"
           grep -F 'AU VALIDATION SUCCEEDED' "$RUNNER_TEMP/esp-auval.log"
+      - name: Test pitch, MIDI capture, VST3 and CoreMIDI
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: bash
+        run: |
+          cmake --build build-macos --config Release
+          ctest --test-dir build-macos -C Release --output-on-failure --timeout 480 --parallel 2

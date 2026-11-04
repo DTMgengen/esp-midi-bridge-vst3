@@ -12,7 +12,8 @@ architectures=${ESP_MACOS_ARCHITECTURES:-$(uname -m)}
 cmake -S "$root" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release \
     -DESP_BUILD_PLUGIN=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
     "-DCMAKE_OSX_ARCHITECTURES=$architectures" "$@"
-cmake --build "$build_dir" --config Release --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-2}"
+cmake --build "$build_dir" --config Release --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-2}" \
+    --target ESPMidiBridge_VST3 ESPMidiBridge_AU ESPMidiBridge_Standalone
 
 products="$build_dir/ESPMidiBridge_artefacts/Release"
 for bundle in "$products/VST3/ESP MIDI Bridge.vst3" \
