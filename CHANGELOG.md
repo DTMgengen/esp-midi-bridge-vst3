@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — macOS source support
+
+- Native Apple Silicon and Intel build script for VST3, AU audio effect and Standalone. Standalone declares why it requests access to the audio input.
+- macOS CI checks host MIDI, MIDI takes, virtual CoreMIDI device output, bundle architecture and Audio Unit validation. Added installation and IAC routing instructions for Mac, including Logic Pro.
+
 ## 0.3.0 preview — 2026-10-21
 
 - Save an original MIDI take and a separate cleaned copy after recording. Conservative, contextual short-note cleanup runs after capture; live MIDI, timing and the accepted pitch engine are unchanged. Originals remain available.

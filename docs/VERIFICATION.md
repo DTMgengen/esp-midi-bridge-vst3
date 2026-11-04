@@ -15,7 +15,7 @@
 
 In this live FL configuration, **Follow DAW record did not automatically start Bridge's separate MIDI-file capture**. Use manual REC MIDI / STOP MIDI when also saving a `.mid` backup. This does not prevent FL's own Piano roll recording through the virtual input.
 
-Recorded/imported 14bit bend playback, POLY recording through FL, physical MIDI loopback, Cubase, Studio One and macOS/Logic remain unverified. A virtual driver is not bundled. macOS AU/VST3/Standalone targets have not been built on a Mac.
+Recorded/imported 14bit bend playback, POLY recording through FL, physical MIDI loopback and live use in Cubase, Studio One and Logic remain unverified. A virtual driver is not bundled. See the [Mac guide](MACOS.ja.md) for automated Mac validation and its limits.
 
 The existing pitch engine is unchanged. LOOSE intentionally retains its original character; STRICT and experimental POLY are not guaranteed error-free for arbitrary real audio. Song-position loop jumps are captured as a continuous elapsed-performance take. The event limit stops capture safely; live MIDI is unaffected.
 

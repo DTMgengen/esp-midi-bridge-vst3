@@ -51,6 +51,8 @@ if(ESP_BUILD_PLUGIN)
     PRODUCT_NAME "ESP MIDI Bridge"
     IS_SYNTH FALSE NEEDS_MIDI_INPUT FALSE NEEDS_MIDI_OUTPUT TRUE
     IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "ESP MIDI Bridge uses your audio input to convert guitar playing to MIDI."
     COPY_PLUGIN_AFTER_BUILD FALSE VST3_CATEGORIES Fx Tools
     FORMATS ${ESP_FORMATS})
   juce_generate_juce_header(ESPMidiBridge)
@@ -67,6 +69,9 @@ if(ESP_BUILD_PLUGIN)
   target_include_directories(bridge_plugin_tests PRIVATE Source "${CMAKE_BINARY_DIR}/ESPMidiBridge_artefacts/JuceLibraryCode")
   target_link_libraries(bridge_plugin_tests PRIVATE ESPMidiBridge juce::juce_audio_utils)
   add_test(NAME plugin COMMAND bridge_plugin_tests)
+  if(APPLE)
+    add_test(NAME coremidi_device_output COMMAND bridge_plugin_tests --coremidi)
+  endif()
   juce_add_console_app(bridge_capture_tests PRODUCT_NAME "Bridge MIDI Capture Tests")
   target_sources(bridge_capture_tests PRIVATE Tests/CaptureTests.cpp)
   target_include_directories(bridge_capture_tests PRIVATE Source "${CMAKE_BINARY_DIR}/ESPMidiBridge_artefacts/JuceLibraryCode")

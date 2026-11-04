@@ -1,0 +1,54 @@
+name: macOS build and validation
+
+on:
+  push:
+    branches: [main, codex/macos-support]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      CMAKE_GENERATOR: Ninja
+      ESP_MACOS_ARCHITECTURES: ${{ matrix.arch }}
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Build VST3, AU and Standalone
+        run: bash scripts/build-macos.sh
+      - name: Test pitch, MIDI capture, VST3 and CoreMIDI
+        run: ctest --test-dir build-macos -C Release --output-on-failure --timeout 480
+      - name: Check bundles and validate Audio Unit
+        shell: bash
+        run: |
+          products=build-macos/ESPMidiBridge_artefacts/Release
+          vst="$products/VST3/ESP MIDI Bridge.vst3"
+          au="$products/AU/ESP MIDI Bridge.component"
+          app="$products/Standalone/ESP MIDI Bridge.app"
+          for bundle in "$vst" "$au" "$app"; do
+            executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$bundle/Contents/Info.plist")
+            lipo -verify_arch "$ESP_MACOS_ARCHITECTURES" "$bundle/Contents/MacOS/$executable"
+          done
+          /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
+          components="$HOME/Library/Audio/Plug-Ins/Components"
+          mkdir -p "$components"
+          ditto "$au" "$components/ESP MIDI Bridge.component"
+          auval -v aufx EmB1 GgAu | tee "$RUNNER_TEMP/esp-auval.log"
+          grep -F 'AU VALIDATION SUCCEEDED' "$RUNNER_TEMP/esp-auval.log"

@@ -51,9 +51,9 @@ BridgeはOSが列挙するMIDI出力先にも送信できます。仮想MIDIの*
 
 公式: [Studio One Pro 7 Basic MIDI Setup](https://support.presonus.com/hc/en-us/articles/29973355204237-Studio-One-Pro-7-Basic-Midi-Setup-New-Keyboard-Control-Surface-Instrument-Faderport)。実機未検証。
 
-## Logic Pro / Macでの次の検証
+## Logic Pro / Mac
 
-**LogicはVST3を直接ロードしません。** [Apple公式の対応形式](https://support.apple.com/en-gb/102082)はAudio Unitsです。本プロジェクトはMac用AUオーディオエフェクトとStandaloneを生成する設定を持ちますが、このWindowsでMacのビルド・署名・auval／Logicでの検証はできていません。
+**LogicはAU形式を使います。** [Macガイド](MACOS.ja.md)の手順でAUオーディオエフェクトまたはStandaloneをビルドしてインストールできます。Logicの実機試奏は未実施です。
 
 接続案:
 

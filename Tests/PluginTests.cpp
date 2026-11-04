@@ -46,9 +46,50 @@ public:
     bool playing=false,recording=false;
     juce::Optional<PositionInfo> getPosition() const override {PositionInfo p;p.setIsPlaying(playing);p.setIsRecording(recording);return p;}
 };
+#if JUCE_MAC
+static void testCoreMidi() {
+    struct Destination final : juce::MidiInputCallback {
+        juce::WaitableEvent on, off;
+        std::atomic<int> unexpected{0};
+        void handleIncomingMidiMessage(juce::MidiInput*,const juce::MidiMessage& m) override {
+            if(!m.isNoteOnOrOff()) return;
+            if(m.getChannel()!=1||m.getNoteNumber()!=60) {++unexpected;return;}
+            (m.isNoteOn()?on:off).signal();
+        }
+    } destination;
+    const auto name="ESP CoreMIDI test "+juce::Uuid().toString();
+    auto input=juce::MidiInput::createNewDevice(name,&destination);
+    require(input!=nullptr,"CoreMIDI could not create a temporary virtual destination");
+    input->start();
+    auto p=std::make_unique<ESPMidiBridgeProcessor>();
+    set(*p,"route",1);set(*p,"monoQuality",1);set(*p,"bend",0);set(*p,"autoLoopMidi",0);
+    const auto id=input->getIdentifier();
+    require(p->selectDevice(id)&&p->deviceConnected(),"Bridge could not open its virtual CoreMIDI destination");
+    p->prepareToPlay(48000,128);
+    juce::AudioBuffer<float> audio(2,128);
+    juce::MidiBuffer midi;
+    for(int b=0;b<75;++b) {
+        for(int i=0;i<128;++i) {
+            audio.setSample(0,i,.25f*float(std::sin(2*esp::pi*261.625565*(b*128+i)/48000.)));
+            audio.setSample(1,i,0);
+        }
+        p->processBlock(audio,midi);
+        require(midi.isEmpty(),"Device-only routing leaked MIDI to the host");
+    }
+    require(destination.on.wait(3000),"CoreMIDI did not receive the expected MIDI 60 note-on");
+    for(int b=0;b<100;++b) {audio.clear();p->processBlock(audio,midi);}
+    require(destination.off.wait(3000),"CoreMIDI did not receive the expected MIDI 60 note-off");
+    require(destination.unexpected==0,"CoreMIDI received an unexpected note or channel");
+    p->releaseResources();
+    std::cout<<"PASS guitar-frequency input -> Device MIDI -> virtual CoreMIDI destination (note 60 on/off)\n";
+}
+#endif
 int main(int argc,char** argv) {
     juce::ScopedJuceInitialiser_GUI gui;
     try {
+#if JUCE_MAC
+        if(argc==2&&juce::String(argv[1])=="--coremidi") {testCoreMidi();return 0;}
+#endif
         const auto takes=juce::File::getCurrentWorkingDirectory().getChildFile("local/allocation-takes-"+juce::Uuid().toString());
         auto p=std::make_unique<ESPMidiBridgeProcessor>(takes);
         require(p->producesMidi()&&!p->acceptsMidi()&&!p->isMidiEffect(),"Not an audio-input MIDI-output effect");

@@ -13,7 +13,7 @@
 - **loopMIDIの自動起動（Windows）**：Device MIDIを使う場合、インストール済みの署名付きloopMIDIをバックグラウンド起動し、選択済みポートへ再接続。×で設定画面を閉じてもポートは維持されます。ドライバー／SDKは同梱しません。
 - **MIDIテイク録音（v0.2）**：出力したノート・ベロシティ・ベンドを標準MIDIファイルへ保存。REC MIDIで手動録音でき、録音状態を通知するDAWでは開始・停止にも追従します。FL Studioでのファイル保存には手動録音を使ってください。
 
-Windows x64 **VST3＋Standalone**。macOS向けにはVST3／AU／Standaloneのビルド設定を用意していますが、Macビルド／Logicでの検証は未実施です。[検証範囲](docs/VERIFICATION.md)と[DAW別の接続手順](docs/DAW_SETUP.ja.md)を参照してください。
+Windows x64 **VST3＋Standalone**。MacではApple Silicon／Intel用の **VST3・AU・Standalone** をソースからビルドできます。[Macでのビルド・インストールとLogic接続](docs/MACOS.ja.md) · [検証範囲](docs/VERIFICATION.md) · [DAW別の接続手順](docs/DAW_SETUP.ja.md)。
 
 **[Windows v0.3.0試用版インストーラー](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0)**：`ESP-MIDI-Bridge-Setup-0.3.0-win-x64.exe`。DAWを閉じて実行すると、VST3と接続ガイドを導入します。必要なVC++ x64ランタイムも同梱し、不足時だけ導入します。Windowsの「インストールされているアプリ」から削除できます。インストーラーにStandaloneや仮想MIDIドライバーは含まれません。[作成方法と検証範囲](docs/INSTALLER.ja.md)。セットアップは未署名です。
 
@@ -75,15 +75,14 @@ Windows: CMake 3.22以上、Visual Studio 2019 C++ Build Tools x64、Windows SDK
 
 JUCE 8.0.12をコミット固定で取得します。既存のJUCEソースを使う場合は `./scripts/build.ps1 -JuceSource 'C:/path/to/JUCE'`。SDKキャッシュやバイナリはGitに含めません。既存Bridge更新時はDAWでBridgeを閉じてから `./scripts/install.ps1 -Update`（バックアップ付き）。
 
-macOS用ソースビルド例（未検証）:
+macOS用ソースビルド（XcodeまたはCommand Line Tools、CMake 3.22以上）:
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
-cmake --build build --config Release -j 4
-ctest --test-dir build -C Release --output-on-failure
+bash scripts/build-macos.sh
+ctest --test-dir build-macos -C Release --output-on-failure
 ```
 
-LogicはAU形式を使用します。今回のAUはオーディオエフェクトで、LogicのMIDI FX枠に入る設計ではありません。Logicの汎用接続案は、Mac版AUまたはStandalone→IAC仮想ポート→Logicのソフト音源。AUのホスト内MIDI出力がそのままLogicの音源へ接続できるという検証はしていません。
+Logicでは **AUオーディオFX → IAC仮想MIDIポート → ソフト音源** と接続します。[Macガイド](docs/MACOS.ja.md)に配置先と手順があります。
 
 ## 検証用
 
@@ -104,6 +103,6 @@ Copyright (c) 2026 DTMgengen. **AGPL-3.0-only**。自由に閲覧・ビルド・
 
 対応するソースは[各リリース](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases)の同じバージョンのタグ／Source ZIPと、同梱のJUCE依存ソースアーカイブから取得できます。[ソースの構成と再ビルド](docs/SOURCE.md)。
 
-English: Audio-input-to-MIDI controller, with MONO LOOSE/STRICT, experimental six-note POLY, MIDI note/velocity/pitch-bend output and automatic/manual Standard MIDI File capture. No synthesizer is included. Download the Windows x64 VST3 installer from Releases. Match MIDI ports and pitch-bend ranges with your instrument. Direct FL Studio 26.1.7 Piano roll note/velocity recording was verified with a real guitar, Device MIDI, loopMIDI and Nexus, alongside dry guitar audio recording. Keep loopMIDI running. Use manual REC MIDI / STOP MIDI for a separate `.mid` backup in FL; automatic capture did not start in this live test. Recorded bend playback and macOS/other DAWs remain unverified. Licensed under AGPLv3.
+English: Audio-input-to-MIDI controller, with MONO LOOSE/STRICT, experimental six-note POLY, MIDI note/velocity/pitch-bend output and Standard MIDI File capture. No synthesizer is included. Download the Windows x64 VST3 installer from Releases. On Apple Silicon or Intel macOS, build VST3, AU and Standalone from source with `bash scripts/build-macos.sh` (CMake 3.22+, Xcode or Command Line Tools). For Logic, use the AU as an audio effect and route Device MIDI through IAC to a software instrument. See the [Mac guide](docs/MACOS.ja.md) for install paths and the scope of validation. Licensed under AGPLv3.
 
 Version 0.3 preview: record with REC MIDI / STOP MIDI, then import the clean copy using Drag clean MIDI. Originals are retained. Live MIDI stays unchanged. Device MIDI can start an already installed, signed loopMIDI in the background. One FL shutdown stall remains under investigation; playback recovered after restarting.

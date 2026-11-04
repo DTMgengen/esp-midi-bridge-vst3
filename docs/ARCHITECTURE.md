@@ -40,7 +40,7 @@ Only fixed storage/atomics are used by capture in the callback. The worker write
 
 Independent bundle `audio.gengen.espmidibridge`, manufacturer `GgAu`, product `EmB1`, VST3 FX/Tools. The original synth's identity is untouched. VST3 declares audio input, dry audio output and a MIDI event output bus. No MIDI input bus is required and incoming MIDI is not forwarded.
 
-macOS CMake includes an AU **audio effect** target, not a Logic MIDI FX component. The proposed Logic connection is AU/standalone→IAC→instrument input. A Windows build cannot establish AU validation, signing/notarisation, macOS driver compatibility or live routing in Logic. Likewise a successful JUCE VST3-host test is distinct from testing each DAW's routing UI.
+macOS CMake includes an AU **audio effect** target. The Logic connection uses AU or Standalone → IAC → instrument input. The Mac build and CI check the local ad-hoc signatures, `auval` and MIDI output through a temporary CoreMIDI destination. These checks are separate from Developer ID signing, notarization and live routing in a DAW. See the [Mac guide](MACOS.ja.md).
 
 ## Post-recording cleanup (v0.3)
 
