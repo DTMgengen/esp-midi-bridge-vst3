@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <new>
 #include <chrono>
+#if JUCE_MAC
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 static thread_local bool watchAllocations=false;
 static thread_local int allocations=0;
@@ -63,7 +66,15 @@ static void testCoreMidi() {
     input->start();
     auto p=std::make_unique<ESPMidiBridgeProcessor>();
     set(*p,"route",1);set(*p,"monoQuality",1);set(*p,"bend",0);set(*p,"autoLoopMidi",0);
-    const auto id=input->getIdentifier();
+    // A JUCE-created input has no legacy output ID. Resolve the CoreMIDI
+    // destination from the same device list used by the editor.
+    juce::String id;
+    for(int attempt=0;attempt<100&&id.isEmpty();++attempt) {
+        for(const auto& port:juce::MidiOutput::getAvailableDevices())
+            if(port.name.startsWith(name)) {id=port.identifier;break;}
+        if(id.isEmpty()) CFRunLoopRunInMode(kCFRunLoopDefaultMode,.03,false);
+    }
+    require(id.isNotEmpty(),"Virtual CoreMIDI destination did not appear in the output list");
     require(p->selectDevice(id)&&p->deviceConnected(),"Bridge could not open its virtual CoreMIDI destination");
     p->prepareToPlay(48000,128);
     juce::AudioBuffer<float> audio(2,128);
