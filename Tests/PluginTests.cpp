@@ -1,12 +1,12 @@
+#if defined(__APPLE__)
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 #include "PluginProcessor.h"
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
 #include <new>
 #include <chrono>
-#if JUCE_MAC
-#include <CoreFoundation/CoreFoundation.h>
-#endif
 
 static thread_local bool watchAllocations=false;
 static thread_local int allocations=0;

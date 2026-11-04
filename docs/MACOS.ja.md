@@ -35,7 +35,7 @@ ESP MIDI Bridgeはギター入力をMIDIへ変換します。Macでは **VST3、
 
 1. macOSの **Audio MIDI設定 → MIDIスタジオ → IAC Driver** で「装置はオンライン」を有効にし、専用のバスを作ります。[AppleのIAC手順](https://support.apple.com/guide/audio-midi-setup/ams1013/mac)。
 2. Bridgeで **Device MIDI** を選び、出力一覧からそのバスを指定します。表示されない場合は **Refresh** を押します。loopMIDIのインストールは不要です。
-3. DAWでそのIACバスをMIDI入力として有効にします。Logicではソフト音源トラックのインスペクタで、そのIACポートを **MIDI In Port** に選び、トラックを選択または録音待機にします。[Logicのトラック入力設定](https://support.apple.com/guide/logicpro/lgcpfe5986f5/mac)。
+3. DAWでそのIACバスをMIDI入力として有効にします。Logicではソフト音源トラックのインスペクタで、**MIDI Input** からそのIACポートを選び、トラックを選択または録音待機にします。[Logicのトラック入力設定](https://support.apple.com/guide/logicpro/lgcpfe5986f5/mac)。
 4. 演奏またはMIDI録音を開始します。同じIACバスにDAWからMIDIを返す設定は外し、二重発音やフィードバックを避けます。Bridgeで別途 `.mid` を保存する場合は **REC MIDI → STOP MIDI** を使います。
 
 ## 検証の範囲

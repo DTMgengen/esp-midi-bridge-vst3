@@ -32,10 +32,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Build VST3, AU and Standalone
+        id: build
         run: bash scripts/build-macos.sh
       - name: Test pitch, MIDI capture, VST3 and CoreMIDI
         run: ctest --test-dir build-macos -C Release --output-on-failure --timeout 480
       - name: Check bundles and validate Audio Unit
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           products=build-macos/ESPMidiBridge_artefacts/Release
