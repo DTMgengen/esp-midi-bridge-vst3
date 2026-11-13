@@ -27,11 +27,20 @@ AudioProcessorValueTreeState::ParameterLayout ESPMidiBridgeProcessor::layout() {
 ESPMidiBridgeProcessor::ESPMidiBridgeProcessor(File captureFolder)
  : AudioProcessor(BusesProperties().withInput("Guitar",AudioChannelSet::stereo(),true).withOutput("Dry monitor",AudioChannelSet::stereo(),true)),
    parameters(*this,nullptr,"ESPMidiBridgeState",layout()),capture(std::move(captureFolder)) {
-    for(size_t i=0;i<cached.size();++i) cached[i]=parameters.getRawParameterValue(ids[i]);
+    for(size_t i=0;i<cached.size();++i) {
+        cached[i]=parameters.getRawParameterValue(ids[i]);
+        const auto* parameter=parameters.getParameter(ids[i]);
+        const auto& range=parameter->getNormalisableRange();
+        minimum[i]=range.start;maximum[i]=range.end;
+        defaults[i]=parameter->convertFrom0to1(parameter->getDefaultValue());
+    }
     startTimer(1000);
 }
 float ESPMidiBridgeProcessor::value(const char* id) const {
-    for(size_t i=0;i<cached.size();++i) if(std::strcmp(id,ids[i])==0) return cached[i]->load();
+    for(size_t i=0;i<cached.size();++i) if(std::strcmp(id,ids[i])==0) {
+        const float raw=cached[i]->load();
+        return std::isfinite(raw)?std::clamp(raw,minimum[i],maximum[i]):defaults[i];
+    }
     return 0;
 }
 bool ESPMidiBridgeProcessor::isBusesLayoutSupported(const BusesLayout& b) const {
@@ -157,8 +166,20 @@ void ESPMidiBridgeProcessor::getStateInformation(MemoryBlock& dest) {
     auto xml=state.createXml();copyXmlToBinary(*xml,dest);
 }
 void ESPMidiBridgeProcessor::setStateInformation(const void* data,int size) {
+    // Our state is a small XML parameter tree. Reject oversized or invalid
+    // containers before parsing data supplied by a project or preset.
+    if(data==nullptr||size<8||size>65536) return;
     if(auto xml=getXmlFromBinary(data,size)) if(xml->hasTagName(parameters.state.getType())) {
         auto state=ValueTree::fromXml(*xml);
+        if(state.getNumChildren()>64||state.getProperty("deviceId").toString().length()>1024) return;
+        for(size_t i=0;i<cached.size();++i) {
+            auto child=state.getChildWithProperty("id",ids[i]);
+            if(!child.isValid()) continue;
+            const double raw=double(child.getProperty("value"));
+            const auto& range=parameters.getParameter(ids[i])->getNormalisableRange();
+            const float safe=std::isfinite(raw)?float(std::clamp(raw,double(minimum[i]),double(maximum[i]))):defaults[i];
+            child.setProperty("value",range.snapToLegalValue(safe),nullptr);
+        }
         for(const char* id:{"recordFollow","recordClean","autoLoopMidi"}) if(!state.getChildWithProperty("id",id).isValid()) {
             ValueTree child("PARAM");child.setProperty("id",id,nullptr);child.setProperty("value",1.0f,nullptr);state.appendChild(child,nullptr);
         }

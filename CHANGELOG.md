@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 preview — 2026-11-13
+
+- Bound non-finite/out-of-range host parameter values and reject oversized/malformed project state before use. Preserve plug-in identity, parameter order and the accepted tracking engine.
+- Adapt the editor to smaller laptop displays; all controls scale together and the window can be resized.
+- Native Mac preview packaging for Apple Silicon and Intel, Windows CI, privacy/permissions documentation and private security reporting. This does not add Developer ID signing/notarization or Windows Authenticode signing.
+- The earlier FL shutdown stall remains unisolated. Existing stable v0.2.0 is retained.
+
 ## Unreleased — macOS source support
 
 - Native Apple Silicon and Intel build script for VST3, AU audio effect and Standalone. Standalone declares why it requests access to the audio input.

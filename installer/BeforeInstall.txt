@@ -1,6 +1,6 @@
 ESP MIDI Bridge — Windows x64 VST3
 
-v0.3.0 試用版：FL終了時の停止を一度確認し、原因を切り分け中です。
+v0.3.2 試用版：過去のFL終了時の停止は原因を切り分け中です。
 DAWを閉じてからインストールしてください。
 
 ・VST3を標準フォルダーへインストールします。
@@ -25,5 +25,5 @@ Device MIDIではインストール済みloopMIDIの自動起動に対応しま�
 
 Copyright (c) 2026 DTMgengen. Licensed under GNU AGPL version 3.
 Licence and corresponding source:
-https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0
+https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.2
 See SOURCE.md and LICENSE installed with this program.

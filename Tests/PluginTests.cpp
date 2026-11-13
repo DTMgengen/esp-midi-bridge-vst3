@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <new>
 #include <chrono>
+#include <limits>
 
 static thread_local bool watchAllocations=false;
 static thread_local int allocations=0;
@@ -103,6 +104,32 @@ int main(int argc,char** argv) {
 #endif
         const auto takes=juce::File::getCurrentWorkingDirectory().getChildFile("local/allocation-takes-"+juce::Uuid().toString());
         auto p=std::make_unique<ESPMidiBridgeProcessor>(takes);
+        // Host automation and project data are external inputs. Invalid
+        // numbers must never become channel indices or non-finite DSP gain.
+        for(const char* id:{"mode","monoQuality","input","gain","threshold","confidence","midiChannel","transpose","bendRange","release","route"}) {
+            auto* raw=p->parameters.getRawParameterValue(id);
+            const float before=raw->load();
+            const auto& range=p->parameters.getParameter(id)->getNormalisableRange();
+            for(float hostile:{std::numeric_limits<float>::quiet_NaN(),std::numeric_limits<float>::infinity(),-std::numeric_limits<float>::infinity(),1e30f,-1e30f}) {
+                raw->store(hostile);const float safe=p->value(id);
+                require(std::isfinite(safe)&&safe>=range.start&&safe<=range.end,"Hostile parameter escaped bounds");
+            }
+            raw->store(before);
+        }
+        auto hostileState=p->parameters.copyState();
+        hostileState.getChildWithProperty("id","midiChannel").setProperty("value",1e300,nullptr);
+        hostileState.getChildWithProperty("id","gain").setProperty("value",-1e300,nullptr);
+        juce::MemoryBlock hostileBytes;auto hostileXml=hostileState.createXml();
+        juce::AudioProcessor::copyXmlToBinary(*hostileXml,hostileBytes);
+        p->setStateInformation(hostileBytes.getData(),int(hostileBytes.getSize()));
+        require(p->value("midiChannel")==16&&p->value("gain")==-24,"Project parameters were not constrained");
+        set(*p,"midiChannel",1);set(*p,"gain",0);
+        const float preserved=p->value("midiChannel");
+        std::array<uint8_t,8> junk{{1,2,3,4,5,6,7,8}};
+        p->setStateInformation(nullptr,100);p->setStateInformation(junk.data(),-1);
+        p->setStateInformation(junk.data(),int(junk.size()));p->setStateInformation(junk.data(),65537);
+        require(p->value("midiChannel")==preserved,"Malformed state modified settings");
+        std::cout<<"PASS malformed/oversized project state and 55 nonfinite/out-of-range host parameter cases\n";
         require(p->producesMidi()&&!p->acceptsMidi()&&!p->isMidiEffect(),"Not an audio-input MIDI-output effect");
         for(int in:{1,2}) for(int out:{1,2}) {auto b=p->getBusesLayout();b.inputBuses.set(0,juce::AudioChannelSet::canonicalChannelSet(in));b.outputBuses.set(0,juce::AudioChannelSet::canonicalChannelSet(out));require(p->isBusesLayoutSupported(b),"Required bus layout rejected");}
         set(*p,"monoQuality",1);set(*p,"mode",1);set(*p,"midiChannel",8);set(*p,"bendRange",2);
@@ -183,8 +210,11 @@ int main(int argc,char** argv) {
             const double us=std::chrono::duration<double,std::micro>(std::chrono::steady_clock::now()-start).count();total+=us;maximum=std::max(maximum,us);
         }
         std::cout<<"STRICT CPU mean "<<total/1500<<" us, max "<<maximum<<" us / 2667 us block, one-core "<<100*total/1500/2666.667<<"%\n";
-        if(argc==3&&juce::String(argv[1])=="--snapshot") {
+        if(argc==3&&(juce::String(argv[1])=="--snapshot"||juce::String(argv[1])=="--snapshot-small")) {
             auto editor=std::unique_ptr<juce::AudioProcessorEditor>(p->createEditor());editor->setVisible(true);
+            if(juce::String(argv[1])=="--snapshot-small") editor->setSize(700,650);
+            require(editor->isResizable(),"Editor cannot adapt to small laptop displays");
+            for(auto* child:editor->getChildren()) require(editor->getLocalBounds().expanded(1).contains(child->getBoundsInParent()),"Resized editor clipped a control");
             auto image=editor->createComponentSnapshot(editor->getLocalBounds());juce::File file=juce::File::getCurrentWorkingDirectory().getChildFile(argv[2]);file.getParentDirectory().createDirectory();
             auto stream=file.createOutputStream();require(stream!=nullptr,"Snapshot stream failed");stream->setPosition(0);stream->truncate();
             juce::PNGImageFormat png;require(png.writeImageToStream(image,*stream),"Snapshot failed");

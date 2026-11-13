@@ -58,6 +58,7 @@ private:
     juce::CriticalSection pendingLock;
     juce::String pendingDevice;
     std::array<std::atomic<float>*,18> cached{};
+    std::array<float,18> minimum{},maximum{},defaults{};
     juce::SmoothedValue<float> inputGain,monitorGain;
     std::atomic<bool> panicRequested{false},resetRequested{false};
     int previousMode=-1,previousQuality=-1,previousInput=-1,previousRoute=-1;

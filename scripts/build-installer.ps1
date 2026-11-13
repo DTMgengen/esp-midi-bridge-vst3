@@ -56,7 +56,7 @@ Copy-Item -LiteralPath $VCRedist -Destination (Join-Path $staging 'vc_redist.x64
 Copy-Item -LiteralPath (Join-Path $taskRoot 'THIRD_PARTY_NOTICES.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $taskRoot 'LICENSE') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $taskRoot 'licenses\THIRD-PARTY-LICENSES.txt') -Destination $staging
-foreach ($guide in @('MIDI_RECORDING.ja.md', 'VERIFICATION.md', 'SOURCE.md')) {
+foreach ($guide in @('MIDI_RECORDING.ja.md', 'VERIFICATION.md', 'SOURCE.md', 'PRIVACY_SECURITY.md', 'MACOS.ja.md')) {
     Copy-Item -LiteralPath (Join-Path $taskRoot ('docs\' + $guide)) -Destination $staging
 }
 $dawGuide = Get-Content -LiteralPath (Join-Path $taskRoot 'docs\DAW_SETUP.ja.md') -Raw -Encoding UTF8

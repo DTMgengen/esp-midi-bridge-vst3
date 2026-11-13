@@ -80,7 +80,12 @@ ESPMidiBridgeEditor::ESPMidiBridgeEditor(ESPMidiBridgeProcessor& p):AudioProcess
         processor.selectDevice(id);
     };
     recordHint.setText("FL Studio: REC MIDI > record / play > STOP MIDI > drag the clean file into Piano roll.",dontSendNotification);
-    refreshDevices();setSize(1000,928);startTimerHz(20);timerCallback();
+    setResizable(true,false);setResizeLimits(650,603,1600,1485);
+    if(auto* constrainer=getConstrainer()) constrainer->setFixedAspectRatio(1000.0/928.0);
+    float scale=1;
+    if(const auto* display=Desktop::getInstance().getDisplays().getPrimaryDisplay())
+        scale=std::clamp(std::min((display->userArea.getWidth()-100)/1000.0f,(display->userArea.getHeight()-120)/928.0f),.65f,1.0f);
+    refreshDevices();setSize(int(1000*scale),int(928*scale));startTimerHz(20);timerCallback();
 }
 ESPMidiBridgeEditor::~ESPMidiBridgeEditor() {stopTimer();setLookAndFeel(nullptr);}
 void ESPMidiBridgeEditor::refreshDevices() {
@@ -90,7 +95,7 @@ void ESPMidiBridgeEditor::refreshDevices() {
     device.setSelectedId(item,dontSendNotification);
 }
 void ESPMidiBridgeEditor::paint(Graphics& g) {
-    g.fillAll(bg);g.setColour(panel);
+    g.fillAll(bg);g.addTransform(AffineTransform::scale(std::min(getWidth()/1000.0f,getHeight()/928.0f)));g.setColour(panel);
     for(auto r:{Rectangle<float>(20,93,960,137),{20,244,960,292},{20,550,960,130},{20,694,960,196}}) g.fillRoundedRectangle(r,12);
     g.setColour(ink);g.setFont(Font(30,Font::bold));g.drawText("ESP MIDI BRIDGE",28,22,600,38,Justification::centredLeft);
     g.setColour(muted);g.setFont(14);g.drawText("GUITAR AUDIO  /  PITCH  /  YOUR INSTRUMENT",30,62,700,22,Justification::centredLeft);
@@ -117,6 +122,8 @@ void ESPMidiBridgeEditor::resized() {
     cleanRecord.setBounds(40,754,260,28);followRecord.setBounds(320,754,220,28);autoLoop.setBounds(600,754,360,28);
     captureStatus.setBounds(36,792,925,28);recordHint.setBounds(36,823,925,24);loopStatus.setBounds(36,852,925,24);
     sourceButton.setBounds(800,708,160,32);
+    const auto transform=AffineTransform::scale(std::min(getWidth()/1000.0f,getHeight()/928.0f));
+    for(auto* child:getChildren()) child->setTransform(transform);
 }
 void ESPMidiBridgeEditor::timerCallback() {
     if(++deviceRefreshTicks>=20||processor.selectedDevice()!=displayedDevice) refreshDevices();

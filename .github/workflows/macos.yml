@@ -2,13 +2,17 @@ name: macOS build and validation
 
 on:
   push:
-    branches: [main, codex/macos-support]
+    branches: [main, codex/macos-support, codex/public-readiness]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   macos:
@@ -24,7 +28,7 @@ jobs:
             arch: x86_64
             parallel: 4
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       CMAKE_GENERATOR: Ninja
       CMAKE_BUILD_PARALLEL_LEVEL: ${{ matrix.parallel }}
@@ -70,3 +74,11 @@ jobs:
         run: |
           cmake --build build-macos --config Release
           ctest --test-dir build-macos -C Release --output-on-failure --timeout 480 --parallel 2
+      - name: Package reviewed native Mac preview
+        run: bash scripts/package-macos.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/ESP-MIDI-Bridge-*-macos-${{ matrix.arch }}.zip
+          if-no-files-found: error
+          retention-days: 14

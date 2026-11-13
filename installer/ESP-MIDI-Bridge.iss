@@ -80,6 +80,8 @@ Source: "{#PayloadDir}\DAW_SETUP.ja.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\MIDI_RECORDING.ja.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\VERIFICATION.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\SOURCE.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PayloadDir}\PRIVACY_SECURITY.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PayloadDir}\MACOS.ja.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\JUCE-LICENSE.md"; DestDir: "{app}\Licenses"; Flags: ignoreversion
