@@ -40,6 +40,39 @@ struct Receiver {
     double pitch(int range=2) const {for(int c=0;c<16;++c) for(int n=0;n<128;++n) if(held[c][n]) return n+(wheel[c]-8192)*double(range)/8192;return -1;}
 };
 static float tone(double t,float pitch) {double phase=2*esp::pi*esp::hz(pitch)*t;return .2f*float(std::sin(phase)+.3*std::sin(2*phase+.4)+.12*std::sin(3*phase+.7));}
+static void stressLifecycle() {
+    const auto root=juce::File::getCurrentWorkingDirectory().getChildFile("local/lifecycle-"+juce::Uuid().toString());
+    for(int cycle=0;cycle<30;++cycle) {
+        const auto folder=root.getChildFile(juce::String(cycle));
+        auto p=std::make_unique<ESPMidiBridgeProcessor>(folder);
+        set(*p,"monoQuality",float(cycle%2));set(*p,"mode",cycle%3==2?1.0f:0.0f);
+        set(*p,"gain",0);set(*p,"recordFollow",0);set(*p,"autoLoopMidi",0);
+        p->prepareToPlay(48000,128);
+        juce::MemoryBlock state;p->getStateInformation(state);p->setStateInformation(state.getData(),int(state.getSize()));
+        {
+            auto editor=std::unique_ptr<juce::AudioProcessorEditor>(p->createEditor());
+            editor->setSize(700,650);
+            for(auto* child:editor->getChildren()) require(editor->getLocalBounds().expanded(1).contains(child->getBoundsInParent()),"Small editor clips controls");
+        }
+        p->capture.requestStart();juce::AudioBuffer<float> audio(2,128);juce::MidiBuffer midi;midi.ensureSize(2048);
+        for(int b=0;b<90;++b) {
+            for(int i=0;i<128;++i) {audio.setSample(0,i,tone((b*128+i)/48000.,60));audio.setSample(1,i,0);}
+            p->processBlock(audio,midi);
+        }
+        require(p->capture.isRecording(),"Lifecycle stress did not start capture");
+        p->releaseResources();p.reset(); // No message loop or forced thread termination.
+        const auto files=folder.findChildFiles(juce::File::findFiles,false,"*-original.mid");
+        require(files.size()==1,"Removing the processor lost its current take");
+        juce::FileInputStream stream(files[0]);juce::MidiFile file;
+        require(file.readFrom(stream,false),"Teardown take is invalid MIDI");
+        int ons=0,offs=0;
+        for(int t=0;t<file.getNumTracks();++t) for(int e=0;e<file.getTrack(t)->getNumEvents();++e) {
+            const auto& m=file.getTrack(t)->getEventPointer(e)->message;ons+=m.isNoteOn();offs+=m.isNoteOff();
+        }
+        require(ons>0&&ons==offs,"Teardown capture has missing or stuck notes");
+    }
+    std::cout<<"PASS 30 create/state/editor/record/release/destroy cycles, both MONO qualities and POLY, balanced saved takes\n";
+}
 static void process(ESPMidiBridgeProcessor& p,juce::AudioBuffer<float>& a,juce::MidiBuffer& m) {
     const auto* storage=m.data.getRawDataPointer();
     watchAllocations=true;p.processBlock(a,m);watchAllocations=false;
@@ -99,6 +132,7 @@ static void testCoreMidi() {
 int main(int argc,char** argv) {
     juce::ScopedJuceInitialiser_GUI gui;
     try {
+        if(argc==2&&juce::String(argv[1])=="--lifecycle") {stressLifecycle();return 0;}
 #if JUCE_MAC
         if(argc==2&&juce::String(argv[1])=="--coremidi") {testCoreMidi();return 0;}
 #endif

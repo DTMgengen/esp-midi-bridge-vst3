@@ -7,7 +7,7 @@ body{font-family:system-ui,"Yu Gothic UI",sans-serif;line-height:1.8;background:
 <h1>ESP MIDI Bridge</h1><p class="muted">ギターの音声 → MIDI → お気に入りの音源</p>
 <p>シンセ音源を内蔵しない、音声からMIDIへの変換プラグインです。Windows x64のVST3対応DAWで使用します。</p>
 <div class="card"><strong>インストール後、最初にDAWでプラグインを再スキャンしてください。</strong><br>VST3の場所：<code>C:\Program Files\Common Files\VST3\ESP MIDI Bridge.vst3</code></div>
-<p class="card">v0.3.0は試用版です。FL終了処理が一度停止したため原因を確認中です。通常再生は再起動後に復旧しました。録音後の整理と自動起動の検証範囲はVERIFICATION.mdを参照してください。</p>
+<p class="card">v0.3.2は試用版です。過去のFL終了処理の停止は原因を確認中です。保存したプロジェクトのコピーで試してください。<a href="PRIVACY_SECURITY.md">個人情報・権限・安全な接続</a>とVERIFICATION.mdに検証範囲があります。</p>
 <h2>FL Studioで接続する</h2>
 <ol><li>ギターを入力するMixerのエフェクトスロットに <strong>ESP MIDI Bridge</strong> を挿入します。</li>
 <li>Bridgeの <strong>MIDI DESTINATION</strong> を <strong>Host MIDI</strong> にします。Wrapperの歯車 → Settings → MIDI の <strong>Output port</strong> を、例えば <strong>20</strong> にします。</li>
@@ -35,6 +35,6 @@ body{font-family:system-ui,"Yu Gothic UI",sans-serif;line-height:1.8;background:
 <p>詳しい手順：<a href="DAW_SETUP.ja.md">DAW別接続ガイド</a>。Cubase／Studio Oneの実機接続とmacOS／Logic用ビルドは未検証です。このインストーラーはWindows用です。</p>
 <h2>更新・削除</h2><p>更新時もDAWを閉じてからセットアップを実行してください。削除はWindowsの「設定 → アプリ → インストールされているアプリ → ESP MIDI Bridge」から行います。ESP String Labや他の音源、DAWプロジェクトは削除しません。</p>
 <h2>English quick start</h2><p>Rescan plugins, insert ESP MIDI Bridge on your guitar mixer track, and choose Host MIDI. In FL Studio, set the Bridge wrapper MIDI Output port to 20 and your VST instrument wrapper MIDI Input port to 20. Match MIDI channels and pitch-bend ranges (initially ±2 semitones). No MIDI Out plugin is required. MONO offers LOOSE and STRICT; POLY uses the experimental chord detector. Close your DAW before updating or uninstalling.</p>
-<h2>ソースとライセンス</h2><p>Copyright (c) 2026 DTMgengen · GNU AGPL v3。<a href="LICENSE">ライセンス全文</a> / <a href="SOURCE.md">対応ソースと再ビルド方法</a> / <a href="https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0">v0.3.0の公開ソース・JUCE依存ソース</a>。</p>
+<h2>ソースとライセンス</h2><p>Copyright (c) 2026 DTMgengen · GNU AGPL v3。<a href="LICENSE">ライセンス全文</a> / <a href="SOURCE.md">対応ソースと再ビルド方法</a> / <a href="https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.2">v0.3.2の公開ソース・JUCE依存ソース</a>。</p>
 <p class="muted">Gengen Audio · <a href="THIRD_PARTY_NOTICES.md">依存ソフトウェアについて</a></p>
 </body></html>

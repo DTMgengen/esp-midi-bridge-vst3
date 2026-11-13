@@ -1,8 +1,14 @@
-# Macでビルドして使う
+# Macで使う
 
 ESP MIDI Bridgeはギター入力をMIDIへ変換します。Macでは **VST3、Audio Unit（AU）、Standalone** を同じソースから作れます。Apple SiliconとIntel向けにネイティブビルドを行います。ビルドの最低対象OSはmacOS 12です。各DAWが要求するmacOSのバージョンも確認してください。
 
-## ビルドとインストール
+## ダウンロードして使う（試用版）
+
+[v0.3.2 Releases](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.2)で **macos-arm64.zip（Apple Silicon）** または **macos-x86_64.zip（Intel）** を選びます。「このMacについて」で種類を確認してください。ZIP内の `READ-ME-FIRST.txt` と、このガイドを読んでから、使うバンドルだけを下の配置先へコピーします。管理者権限を要求するインストーラーは含まれません。
+
+Mac配布版はアドホック署名のみで、Developer ID署名・Apple公証はありません。ダウンロードしたバンドルはGatekeeperに止められる場合があります。[Appleの説明](https://support.apple.com/102445)を確認し、セキュリティ機能を無効にする操作はしないでください。以下のソースから自分のMacでビルドする方法もあります。
+
+## ソースからビルドする
 
 1. MacにXcode、または `xcode-select --install` でCommand Line Toolsを導入し、CMake 3.22以上を用意します。
 2. ターミナルで次を実行します。JUCE 8.0.12は指定コミットから取得します。
@@ -23,7 +29,9 @@ ESP MIDI Bridgeはギター入力をMIDIへ変換します。Macでは **VST3、
 
 4. DAWを起動し、プラグインを再スキャンします。Logic ProではAudio FXの **Audio Units → Gengen Audio → ESP MIDI Bridge** を使います。表示されない場合は[AppleのAU再スキャン手順](https://support.apple.com/122179)を参照してください。Standaloneはアプリを直接開きます。
 
-スクリプトはMac上でビルドしたバンドルにローカル用のアドホック署名を付けます。Developer ID署名やAppleの公証は行いません。Mac版インストーラーは同梱していません。[配置先の参考: JUCE公式](https://juce.com/tutorials/tutorial_app_plugin_packaging/)。
+スクリプトはMac上でビルドしたバンドルにローカル用のアドホック署名を付けます。Developer ID署名やAppleの公証は行いません。[配置先の参考: JUCE公式](https://juce.com/tutorials/tutorial_app_plugin_packaging/)。
+
+ダウンロード版でも配置先は同じです。VST3とAUはZIP直下にある同名のバンドル全体をコピーします。Standaloneはプラグインではなく、単独で起動するアプリです。入力を解析するにはDAW側の入力モニタリングが必要です。Macのノートパソコンで画面が小さい場合、Bridgeの画面サイズを変更できます。
 
 ## ギターから音源へつなぐ
 

@@ -15,6 +15,8 @@
 
 Windows x64 **VST3＋Standalone**。MacではApple Silicon／Intel用の **VST3・AU・Standalone** をソースからビルドできます。[Macでのビルド・インストールとLogic接続](docs/MACOS.ja.md) · [検証範囲](docs/VERIFICATION.md) · [DAW別の接続手順](docs/DAW_SETUP.ja.md)。
 
+**初めて使う方へ：[v0.3.2試用版ダウンロード](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.2)**。MacはApple Silicon用／Intel用ZIP、Windowsはx64インストーラーを選びます。[個人情報・権限・安全な接続と署名の制約](docs/PRIVACY_SECURITY.md)を先に確認してください。Macは未公証、Windowsは未署名です。Logicでの実ギター試奏や全DAWの動作を保証する段階ではありません。
+
 **[Windows v0.3.0試用版インストーラー](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.0)**：`ESP-MIDI-Bridge-Setup-0.3.0-win-x64.exe`。DAWを閉じて実行すると、VST3と接続ガイドを導入します。必要なVC++ x64ランタイムも同梱し、不足時だけ導入します。Windowsの「インストールされているアプリ」から削除できます。インストーラーにStandaloneや仮想MIDIドライバーは含まれません。[作成方法と検証範囲](docs/INSTALLER.ja.md)。セットアップは未署名です。
 
 v0.3.0は試用版です。録音後の整理・loopMIDI起動は検証済みですが、FLで終了処理が一度停止したため、原因の切り分けを継続します。通常再生は再起動後に復旧し、ユーザーも発音を確認しています。安定版は[Releases/latest](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/latest)から取得できます。
