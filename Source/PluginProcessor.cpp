@@ -2,7 +2,31 @@
 #include "PluginEditor.h"
 
 using namespace juce;
-namespace {constexpr const char* ids[]={"mode","monoQuality","input","gain","threshold","confidence","midiChannel","transpose","bend","bendRange","sendRange","fixedVelocity","release","monitor","route","recordFollow","recordClean","autoLoopMidi"};}
+namespace {
+constexpr const char* ids[]={"mode","monoQuality","input","gain","threshold","confidence","midiChannel","transpose","bend","bendRange","sendRange","fixedVelocity","release","monitor","route","recordFollow","recordClean","autoLoopMidi"};
+bool boundedStateXml(const void* data,int size) {
+    if(data==nullptr||size<8||size>65536) return false;
+    // Check the small flat state grammar before handing it to a recursive XML
+    // parser. State never needs a DTD, custom entities, comments or deep trees.
+    const auto* bytes=static_cast<const char*>(data);
+    int depth=0;char quote=0;bool tag=false,processing=false;
+    for(int i=8;i<size;++i) {
+        const char c=bytes[i];
+        if(quote) {if(c==quote) quote=0;continue;}
+        if(tag) {
+            if(c=='\''||c=='"') quote=c;
+            else if(c=='>') {if(!processing&&i>8&&bytes[i-1]=='/') --depth;tag=false;}
+        } else if(c=='<') {
+            if(i+1>=size||bytes[i+1]=='!') return false;
+            processing=bytes[i+1]=='?';
+            if(!processing) depth+=bytes[i+1]=='/'?-1:1;
+            tag=true;
+        }
+        if(depth<0||depth>4) return false;
+    }
+    return !tag&&!quote&&depth==0;
+}
+}
 AudioProcessorValueTreeState::ParameterLayout ESPMidiBridgeProcessor::layout() {
     AudioProcessorValueTreeState::ParameterLayout p;
     auto choice=[&](const char* id,const char* name,StringArray options,int initial=0) {p.add(std::make_unique<AudioParameterChoice>(ParameterID{id,1},name,options,initial));};
@@ -168,7 +192,7 @@ void ESPMidiBridgeProcessor::getStateInformation(MemoryBlock& dest) {
 void ESPMidiBridgeProcessor::setStateInformation(const void* data,int size) {
     // Our state is a small XML parameter tree. Reject oversized or invalid
     // containers before parsing data supplied by a project or preset.
-    if(data==nullptr||size<8||size>65536) return;
+    if(!boundedStateXml(data,size)) return;
     if(auto xml=getXmlFromBinary(data,size)) if(xml->hasTagName(parameters.state.getType())) {
         auto state=ValueTree::fromXml(*xml);
         if(state.getNumChildren()>64||state.getProperty("deviceId").toString().length()>1024) return;

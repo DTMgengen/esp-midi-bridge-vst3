@@ -162,6 +162,17 @@ int main(int argc,char** argv) {
         std::array<uint8_t,8> junk{{1,2,3,4,5,6,7,8}};
         p->setStateInformation(nullptr,100);p->setStateInformation(junk.data(),-1);
         p->setStateInformation(junk.data(),int(junk.size()));p->setStateInformation(junk.data(),65537);
+        auto restoreXml=[&](const juce::String& text) {
+            juce::MemoryOutputStream block;
+            block.write(hostileBytes.getData(),4);block.writeInt(text.getNumBytesAsUTF8());
+            block.write(text.toRawUTF8(),size_t(text.getNumBytesAsUTF8()));block.writeByte(0);
+            p->setStateInformation(block.getData(),int(block.getDataSize()));
+        };
+        restoreXml("<!DOCTYPE ESPMidiBridgeState [<!ENTITY value '5'>]><ESPMidiBridgeState><PARAM id='midiChannel' value='&value;'/></ESPMidiBridgeState>");
+        juce::String deep="<ESPMidiBridgeState><PARAM id='midiChannel' value='5'/>";
+        for(int i=0;i<100;++i) deep+="<nested>";
+        for(int i=0;i<100;++i) deep+="</nested>";
+        restoreXml(deep+"</ESPMidiBridgeState>");
         require(p->value("midiChannel")==preserved,"Malformed state modified settings");
         std::cout<<"PASS malformed/oversized project state and 55 nonfinite/out-of-range host parameter cases\n";
         require(p->producesMidi()&&!p->acceptsMidi()&&!p->isMidiEffect(),"Not an audio-input MIDI-output effect");
