@@ -4,7 +4,7 @@ ESP MIDI Bridgeはギター入力をMIDIへ変換します。Macでは **VST3、
 
 ## ダウンロードして使う（試用版）
 
-[v0.3.2 Releases](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.2)で **macos-arm64.zip（Apple Silicon）** または **macos-x86_64.zip（Intel）** を選びます。「このMacについて」で種類を確認してください。ZIP内の `READ-ME-FIRST.txt` と、このガイドを読んでから、使うバンドルだけを下の配置先へコピーします。管理者権限を要求するインストーラーは含まれません。
+[v0.3.2 Releases](https://github.com/DTMgengen/esp-midi-bridge-vst3/releases/tag/v0.3.2)で **macos-arm64.zip（Apple Siliconネイティブ）** または **macos-x86_64.zip（Intel／Rosetta）** を選びます。**FL Studioでは Help → About の実行モードに合わせます。** Apple SiliconのMacでもFLをRosettaで動かしているならx86_64版です。ZIP内の `READ-ME-FIRST.txt` と、このガイドを読んでから、使うバンドルだけを下の配置先へコピーします。管理者権限を要求するインストーラーは含まれません。
 
 Mac配布版はアドホック署名のみで、Developer ID署名・Apple公証はありません。ダウンロードしたバンドルはGatekeeperに止められる場合があります。[Appleの説明](https://support.apple.com/102445)を確認し、セキュリティ機能を無効にする操作はしないでください。以下のソースから自分のMacでビルドする方法もあります。
 
@@ -34,6 +34,19 @@ Mac配布版はアドホック署名のみで、Developer ID署名・Apple公証
 ダウンロード版でも配置先は同じです。VST3とAUはZIP直下にある同名のバンドル全体をコピーします。Standaloneはプラグインではなく、単独で起動するアプリです。入力を解析するにはDAW側の入力モニタリングが必要です。Macのノートパソコンで画面が小さい場合、Bridgeの画面サイズを変更できます。
 
 ## ギターから音源へつなぐ
+
+### Mac版FL Studio（VST3）
+
+1. FLを終了し、ZIPの **ESP MIDI Bridge.vst3** 全体を `~/Library/Audio/Plug-Ins/VST3/` へコピーします。AUやStandaloneはFLでのVST3演奏には不要です。
+2. FLの **Options → Manage plugins** で **Verify plugins** と **Find installed plugins** を使い、Bridgeをエフェクトとして認識させます。CPUモードを変えた場合はそのモードで再スキャンします。[Image-Lineの導入ガイド](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/basics_externalplugins.htm)と[実行モードの説明](https://support.image-line.com/action/knowledgebase?ans=668)。
+3. Audio settingsでインターフェースを選び、ギター入力のあるMixer InsertにBridgeを挿します。macOSのマイク権限は **FL Studio** に許可します。入力メーターが動くことを確認します。
+4. Bridgeを **Host MIDI** にします。BridgeのWrapperの **Settings → MIDI Output port = 20**、受信する**VST版音源**のWrapperの **MIDI Input port = 20** に合わせます。20は一例です。受信音源もFLと同じCPUモードで動く版を使います。[公式Wrapper設定](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/plugins/wrapper.htm)。
+5. 最初は **MONO / STRICT**、MIDI channel 1、受信音源のベンド範囲±2半音で単音を試します。この接続で音源を鳴らすためにloopMIDIやIACを立ち上げる必要はありません。
+6. MIDIファイルも残すならBridgeの **REC MIDI → STOP MIDI** を使い、保存したファイルをPiano rollへ読み込みます。Piano rollに直接リアルタイム録音したい場合は、下の **Device MIDI → IAC** をFLの **Options → MIDI settings → Input** でEnableし、generic controllerとして受けます。こちらは別の接続方法なのでHost MIDIとの二重接続を避けます。[公式MIDI設定](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/envsettings_midi.htm)。
+
+上記は公式の接続仕様とMacの自動VST3テストを元にした手順です。**Mac版FL Studioで実際にギターを弾いて音源を鳴らす試奏は未実施**です。WindowsでのFL試奏と区別してください。
+
+### 他のDAW・Standalone
 
 - **VST3対応DAW**：ギターを受けるオーディオトラックにBridgeを挿し、**Host MIDI** を選択します。DAWがエフェクトのMIDI出力を公開する場合は、音源トラックでBridgeをMIDI入力に選びます。出力を選べないDAWでは下のIACを使います。
 - **Logic Pro**：AUをギターのオーディオトラックの **Audio FX** に挿し、正しい入力と入力モニタリングを選びます。Bridgeの **Device MIDI** からIACへ送り、別のソフト音源トラックで受けます。LogicのMIDI FX枠への挿入は不要です。[Logicが対応する形式: Apple公式](https://support.apple.com/en-gb/102082)。

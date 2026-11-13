@@ -76,6 +76,21 @@ jobs:
           ctest --test-dir build-macos -C Release --output-on-failure --timeout 480 --parallel 2
       - name: Package reviewed native Mac preview
         run: bash scripts/package-macos.sh
+      - name: Validate VST3 with pluginval
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip \
+            -o "$RUNNER_TEMP/pluginval.zip"
+          echo "3c4c533bda0c5059eea3ddaea752d757ee2025041f0f47e6bcb0e87f6082b29f  $RUNNER_TEMP/pluginval.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/pluginval.zip" -d "$RUNNER_TEMP/pluginval"
+          export ESP_MIDI_BRIDGE_TAKES_DIR="$RUNNER_TEMP/pluginval-takes"
+          "$RUNNER_TEMP/pluginval/pluginval.app/Contents/MacOS/pluginval" \
+            --validate "$PWD/build-macos/ESPMidiBridge_artefacts/Release/VST3/ESP MIDI Bridge.vst3" \
+            --strictness-level 5 --random-seed 42 2>&1 | tee "$RUNNER_TEMP/pluginval.log"
+          grep -Fq 'SUCCESS' "$RUNNER_TEMP/pluginval.log"
+          if grep -Eq 'FAILURE|No plugins found|Num plugins found: 0' "$RUNNER_TEMP/pluginval.log"; then exit 1; fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: macos-${{ matrix.arch }}
