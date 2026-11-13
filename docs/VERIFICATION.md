@@ -1,4 +1,8 @@
-# v0.3.0 preview verification scope
+# Verification scope
+
+Current: [2026-11-13 v0.3.2 public preview review](#2026-11-13--v032-public-preview-review). Older results below are retained as historical evidence.
+
+## v0.3.0 preview — historical
 
 2026-10-21. Windows x64, MSVC 2019, JUCE 8.0.12.
 
@@ -31,3 +35,13 @@ Isolated v0.3.0 install, same-version repair, locked update/uninstall refusal, i
 - Windows loopMIDI: a controlled cold start from the support component verified the installed application's developer signature, launched it with no visible configuration window, and restored the dedicated port. Already-running detection and keeping ports active after closing the configuration were also checked. The plugin reconnects the saved port; no third-party SDK/driver is embedded. Disabled-helper CTest does not launch external apps.
 - FL 26.1.7: replayed a previously recorded real-guitar audio clip through Bridge in MONO LOOSE and captured 51 original notes / 44 clean notes. Seven note pairs were removed; all retained events match the exact original tick positions and bytes. Drag clean MIDI imported the clean file into Nexus's empty Pattern 2 Piano roll. The original Pattern 1 and audio were preserved and the local project saved. This is recorded-guitar replay, not a newly confirmed live-guitar audition or proof that every removed note was unintended.
 - One FL shutdown attempt stalled during plugin teardown. The saved project was backed up and reopened; playback clock/meters worked again and the user confirmed playback/audio. The cause is not isolated. This is a preview, not a claim that this shutdown condition is resolved. Fresh live fast-passage judgement and FL shutdown stability remain follow-up checks.
+## 2026-11-13 — v0.3.2 public preview review
+
+- Native macOS 15 **arm64 and x86_64**: all **12 CTest cases** pass, including the actual VST3 wrapper's notes/bends/capture, temporary CoreMIDI destination and 30 create/state/editor/record/release/destroy cycles. `auval` succeeds and **VST3 pluginval 1.0.4 level 5 succeeds**, seed 42. [Exact tested build](https://github.com/DTMgengen/esp-midi-bridge-vst3/actions/runs/43370232770).
+- Windows x64: the clean-source GitHub-hosted Windows build passes **all 11 tests**. Local MSVC 2019 also passes 11 tests; after the final state-parser guard, the four affected processor/capture/lifecycle/VST3 suites pass again and final VST3 pluginval level 5 succeeds, seed 42. The 700×650 editor was visually inspected with all controls present. Isolated installer install, locked update/uninstall refusal, repair, actual installed VST3 output, uninstall, and preservation of other files/live installations pass. This did not replace the developer's private installed build.
+- The shared tracking/MIDI core passes **six tests under AddressSanitizer and UBSan on Linux**, including pitch modes, strict sweep/fidelity, MIDI lifecycle and cleanup. [Clean-source Windows and sanitizer CI](https://github.com/DTMgengen/esp-midi-bridge-vst3/actions/runs/43370232851). This is separate from testing a Mac/Windows plug-in under a sanitizer.
+- The plug-in retains its IDs and 18 parameter order. Tests cover 55 NaN/infinite/out-of-range parameter inputs, malformed/oversized state, excessive nesting and DTD/custom-entity rejection before recursive XML parsing. Tracking/MIDI engine sources match the prior public version. No private FL engine or settings were exported.
+- The public Git history was scanned with Gitleaks 8.30.1 with no detected secrets; commit identities use GitHub noreply. Previous v0.2.0/v0.3.0 source ZIP file lists match their public tags and their published checksums. Checked release manifests and matching Windows modules contain no personal user paths or personal email matches. These checks do not constitute an independent security audit or proof that all possible private data was identified.
+- Mac ZIP checks cover the expected file set, SHA-256 contents, native CPU type, executable permissions, version, signature resources, microphone permission text and bundle signature verification on the runner. [Privacy, permissions and distribution limitations](PRIVACY_SECURITY.md) are included.
+
+**Not verified:** a real guitar playing a receiving instrument inside **Mac FL Studio**; actual live use in Logic/other Mac DAWs; physical interface/latency measurements; every supported OS; or all long-running host teardown conditions. The earlier FL shutdown stall is not claimed fixed. Mac packages are ad-hoc signed, not Developer ID signed/notarized. Windows setup is unsigned. v0.3.2 remains a preview; existing stable v0.2.0 is retained.
